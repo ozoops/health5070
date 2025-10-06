@@ -58,7 +58,7 @@ openai==1.109.1
 orjson==3.11.3
 packaging==25.0
 pandas==2.3.3
-Pillow==9.5.0
+Pillow==10.3.0
 proglog==0.1.12
 propcache==0.3.2
 protobuf==6.32.1
