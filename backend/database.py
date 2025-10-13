@@ -2,18 +2,20 @@ import sqlite3
 import pandas as pd
 import os
 from datetime import datetime
-import hashlib
+from passlib.context import CryptContext
 
 DB_FILE = 'health_dongA.db'
 
 # --- Password Hashing ---
-def hash_password(password):
-    """Hashes the password using SHA256."""
-    return hashlib.sha256(password.encode()).hexdigest()
+pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
-def verify_password(stored_password, provided_password):
+def hash_password(password: str):
+    """Hashes the password using argon2."""
+    return pwd_context.hash(password)
+
+def verify_password(plain_password: str, hashed_password: str):
     """Verifies a stored password against one provided by the user."""
-    return stored_password == hash_password(provided_password)
+    return pwd_context.verify(plain_password, hashed_password)
 
 # --- DB Initialization ---
 def update_schema(conn):
@@ -92,7 +94,7 @@ def init_db():
     c.execute("""
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT UNIQUE NOT NULL,
+        email TEXT UNIQUE NOT NULL,
         password TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
@@ -126,26 +128,26 @@ def init_db():
     return conn
 
 # --- User Management Functions ---
-def add_user(conn, username, password):
+def add_user(conn, email, password):
     """Adds a new user to the database with a hashed password."""
     c = conn.cursor()
     hashed_password = hash_password(password)
     try:
-        c.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, hashed_password))
+        c.execute("INSERT INTO users (email, password) VALUES (?, ?)", (email, hashed_password))
         conn.commit()
         return True
     except sqlite3.IntegrityError:
-        # Username already exists
+        # Email already exists
         return False
 
-def get_user(conn, username):
-    """Retrieves a user by username."""
+def get_user(conn, email):
+    """Retrieves a user by email."""
     c = conn.cursor()
-    c.execute("SELECT * FROM users WHERE username = ?", (username,))
+    c.execute("SELECT * FROM users WHERE email = ?", (email,))
     user = c.fetchone()
     if user:
         # Return as a dictionary
-        return {'id': user[0], 'username': user[1], 'password': user[2]}
+        return {'id': user[0], 'email': user[1], 'password': user[2]}
     return None
 
 # --- Chat History Functions ---
@@ -220,7 +222,6 @@ def delete_all_history(conn, user_id):
     conn.commit()
 
 # --- Article and Video Functions ---
-
 def get_articles_with_filter(conn, status='전체', sort_order='최신순', limit=20):
     base_query = """
         SELECT a.* 
@@ -306,3 +307,19 @@ def get_generated_article(conn, article_id):
     query = "SELECT * FROM generated_articles WHERE article_id = ? ORDER BY created_date DESC LIMIT 1"
     df = pd.read_sql_query(query, conn, params=[article_id])
     return df.iloc[0].to_dict() if not df.empty else None
+
+def delete_video(conn, video_id):
+    """Deletes a video record from the database and returns its file path."""
+    c = conn.cursor()
+    
+    # First, get the path of the video file to delete it from the filesystem
+    c.execute("SELECT video_path FROM videos WHERE id = ?", (video_id,))
+    result = c.fetchone()
+    video_path = result[0] if result else None
+    
+    if video_path:
+        # Delete the record from the database
+        c.execute("DELETE FROM videos WHERE id = ?", (video_id,))
+        conn.commit()
+        return video_path
+    return None

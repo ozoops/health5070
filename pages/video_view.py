@@ -1,3 +1,4 @@
+
 import streamlit as st
 import sys
 import os
@@ -9,30 +10,17 @@ sys.path.append(project_root)
 
 from backend.database import init_db, get_produced_videos, get_article_and_video, add_view_history, get_user
 from frontend.utils import set_background
+from frontend.auth import is_logged_in
 
 # --- PAGE SETUP AND AUTH CHECK ---
 st.set_page_config(page_title="건강 영상관", layout="wide")
 set_background("https://images.unsplash.com/photo-1574267432553-4b4628081c31?q=80&w=1931&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D")
 conn = init_db()
 
-if not st.session_state.get('logged_in'):
-    st.error("이 페이지에 접근하려면 로그인이 필요합니다.")
+if not is_logged_in():
+    st.warning("🎬 건강 영상관은 로그인 후 이용 가능합니다.")
+    st.info("왼쪽 사이드바에서 로그인 또는 회원가입을 해주세요.")
     st.stop()
-
-# --- SIDEBAR ---
-with st.sidebar:
-    st.success(f"{st.session_state['username']}님, 환영합니다!")
-    st.page_link("app.py", label="홈", icon="🏠")
-    st.page_link("pages/content_view.py", label="건강 뉴스(최신)", icon="📰")
-    st.page_link("pages/video_view.py", label="건강 영상관", icon="🎬")
-    st.page_link("pages/history_view.py", label="시청 기록", icon="📋")
-    st.page_link("pages/chatbot.py", label="AI 상담", icon="🤖")
-    st.page_link("pages/chat_history_view.py", label="AI 상담 기록", icon="📜")
-    st.markdown("---")
-    if st.button("로그아웃"):
-        st.session_state['logged_in'] = False
-        st.session_state['username'] = ""
-        st.rerun()
 
 # --- MAIN CONTENT ---
 st.title("🎬 건강 영상관")
@@ -55,6 +43,8 @@ else:
     st.markdown(f"총 **{len(videos_df)}**개의 동영상이 있습니다.")
     st.markdown("---")
 
+    user = get_user(conn, st.session_state['email'])
+
     for _, video_row in videos_df.iterrows():
         article_id = video_row['article_id']
         
@@ -63,10 +53,8 @@ else:
             
             if video_row['video_path'] and os.path.exists(video_row['video_path']):
                 st.video(video_row['video_path'])
-                if 'username' in st.session_state and st.session_state['username']:
-                    user = get_user(conn, st.session_state['username'])
-                    if user:
-                        add_view_history(conn, user['id'], video_row['id'], 'video')
+                if user:
+                    add_view_history(conn, user['id'], video_row['id'], 'video')
             else:
                 st.warning("비디오 파일을 찾을 수 없습니다.")
 

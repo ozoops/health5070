@@ -1,3 +1,4 @@
+
 import streamlit as st
 import os
 import sys
@@ -15,7 +16,22 @@ sys.path.append(project_root)
 
 from backend.database import init_db, get_user, save_chat_message, get_chat_history
 from frontend.utils import set_background
+from frontend.auth import is_logged_in
 from backend.article_generator import ArticleGenerator # Import our new Agent
+
+# --- PAGE SETUP AND AUTH CHECK ---
+st.set_page_config(page_title="AI 건강 비서", layout="centered")
+set_background("https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D")
+
+if not is_logged_in():
+    st.warning("🤖 AI 상담은 로그인 후 이용 가능합니다.")
+    st.info("왼쪽 사이드바에서 로그인 또는 회원가입을 해주세요.")
+    st.stop()
+
+# --- DB and User Setup ---
+conn = init_db()
+user = get_user(conn, st.session_state['email'])
+user_id = user['id']
 
 # --- Voice Input Function ---
 def get_voice_input():
@@ -36,19 +52,6 @@ def get_voice_input():
             st.error(f"음성 인식 중 오류가 발생했습니다: {e}")
     return None
 
-# --- PAGE SETUP AND AUTH CHECK ---
-st.set_page_config(page_title="AI 건강 비서", layout="centered")
-set_background("https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D")
-
-if not st.session_state.get('logged_in'):
-    st.error("이 페이지에 접근하려면 로그인이 필요합니다.")
-    st.stop()
-
-# --- DB and User Setup ---
-conn = init_db()
-user = get_user(conn, st.session_state['username'])
-user_id = user['id']
-
 # --- Cache the Agent ---
 @st.cache_resource
 def get_article_agent():
@@ -56,19 +59,6 @@ def get_article_agent():
     return ArticleGenerator()
 
 agent = get_article_agent()
-
-# --- SIDEBAR ---
-with st.sidebar:
-    st.success(f"{st.session_state['username']}님, 환영합니다!")
-    st.page_link("app.py", label="홈", icon="🏠")
-    st.page_link("pages/content_view.py", label="건강 콘텐츠 보기", icon="🎬")
-    st.page_link("pages/chatbot.py", label="AI 건강 비서", icon="🤖")
-    st.page_link("pages/chat_history_view.py", label="AI 상담 기록", icon="📜")
-    st.markdown("---")
-    if st.button("로그아웃"):
-        st.session_state['logged_in'] = False
-        st.session_state['username'] = ""
-        st.rerun()
 
 # --- MAIN CONTENT ---
 st.title("🤖 AI 건강 비서 (RAG Agent)")

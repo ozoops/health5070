@@ -168,7 +168,7 @@ class VideoProducer:
     # 캡션 이미지 렌더링 (반투명 박스 + 중앙 정렬)
     # -------------------------------
     def render_caption_image(self, text: str) -> np.ndarray:
-        FONT_SIZE = 48
+        FONT_SIZE = 36
         MARGIN = 60
         LINE_SPACING = 12
         CAPTION_BOX_ALPHA = 180
@@ -241,7 +241,7 @@ Example:
 Now, create the opening sentence for the headline provided above."""
 
             response = self.client.chat.completions.create(
-                model="gpt-4o",
+                model="gpt-3.5-turbo",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt},

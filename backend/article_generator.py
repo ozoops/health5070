@@ -63,7 +63,7 @@ class ArticleGenerator:
             raise ValueError("OPENAI_API_KEY environment variable not set.")
         
         # Bind tools to the LLM
-        self.llm = ChatOpenAI(model="gpt-4o", api_key=self.api_key)
+        self.llm = ChatOpenAI(model="gpt-3.5-turbo", api_key=self.api_key)
         self.agent = self._create_agent()
 
     def _create_agent(self):
@@ -116,6 +116,46 @@ class ArticleGenerator:
         # Extract the last AI message as the final output
         return response['messages'][-1].content
 
+    def generate_new_article(self, title: str, content: str) -> str:
+        """
+        Generates a new article based on the original title and content,
+        targeting a 50-70 year old audience.
+        """
+        prompt_template_str = """
+        당신은 50대-70대 독자를 위한 건강 전문 작가입니다.
+        아래 주어진 원본 기사의 제목과 내용을 바탕으로, 독자들이 이해하기 쉽고 실용적인 정보를 얻을 수 있도록 새로운 건강 기사를 작성해 주세요.
+
+        - **목표**: 원본 기사의 핵심 정보를 유지하되, 더 친절하고 부드러운 어조로 설명합니다.
+        - **형식**: 독자가 읽기 편하도록 문단을 나누고, 중요한 부분은 강조해 주세요.
+        - **내용**: 전문 용어는 쉽게 풀어서 설명하고, 일상 생활에서 실천할 수 있는 팁을 포함하면 좋습니다.
+        - **분량**: 원본 기사와 비슷하거나 약간 더 상세하게 작성해 주세요.
+        - **출력**: 제목과 내용을 포함한 완결된 기사 형식으로 작성해 주세요. (예: "새로운 제목\n\n첫 번째 문단...")
+
+        ---
+        **원본 기사 제목**: {title}
+        ---
+        **원본 기사 내용**:
+        {content}
+        ---
+
+        이제 위의 내용을 바탕으로 새로운 기사를 작성해 주세요.
+        """
+        
+        prompt = ChatPromptTemplate.from_template(prompt_template_str)
+        output_parser = StrOutputParser()
+        
+        # Use a non-tool-bound LLM for this simple chain
+        article_llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.7, api_key=self.api_key)
+        chain: Runnable = prompt | article_llm | output_parser
+        
+        try:
+            new_article = chain.invoke({"title": title, "content": content})
+            return new_article.strip()
+        except Exception as e:
+            print(f"New article generation with LangChain failed: {e}")
+            # Return a user-friendly error message in Korean
+            return "죄송합니다, AI 기사 생성 중 예상치 못한 오류가 발생했습니다. 잠시 후 다시 시도해 주세요."
+
     def generate_short_script(self, content):
         """Generates a short video script from the article content using LangChain."""
         prompt_template_str = """
@@ -137,7 +177,7 @@ class ArticleGenerator:
         output_parser = StrOutputParser()
         
         # Use a non-tool-bound LLM for this simple chain
-        script_llm = ChatOpenAI(model="gpt-4o", api_key=self.api_key)
+        script_llm = ChatOpenAI(model="gpt-3.5-turbo", api_key=self.api_key)
         chain: Runnable = prompt | script_llm | output_parser
         
         try:
