@@ -101,3 +101,4 @@ zstandard==0.25.0
 langgraph
 langchain-experimental
 passlib
+argon2-cffi==23.1.0
