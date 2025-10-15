@@ -13,6 +13,27 @@ from frontend.utils import set_background
 # Set background image
 set_background("https://images.unsplash.com/photo-1576091160550-2173dba999ef?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D")
 
+def nanum_gothic_theme():
+    return {
+        "config": {
+            "title": {"font": "Nanum Gothic", "anchor": "middle"},
+            "axis": {"labelFont": "Nanum Gothic", "titleFont": "Nanum Gothic"},
+            "header": {"labelFont": "Nanum Gothic", "titleFont": "Nanum Gothic"},
+            "legend": {"labelFont": "Nanum Gothic", "titleFont": "Nanum Gothic"},
+            "range": {
+                "category": {"scheme": "pastel1"},
+                "diverging": {"scheme": "redblue"},
+                "heatmap": {"scheme": "viridis"},
+                "ramp": {"scheme": "blues"},
+            },
+            "view": {"stroke": "transparent"},
+        }
+    }
+
+alt.themes.register("nanum_gothic", nanum_gothic_theme)
+alt.themes.enable("nanum_gothic")
+
+
 def create_dashboard():
     # st.set_page_config(layout="wide") # This is now set globally or in the main app
     st.title("📊 5070 맞춤 건강 통계 대시보드")

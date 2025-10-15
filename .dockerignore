@@ -1,0 +1,30 @@
+# Git
+.git/
+.gitignore
+
+# Docker
+Dockerfile
+.dockerignore
+
+# Fly.io
+fly.toml
+
+# Python
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# Streamlit
+.streamlit/
+
+# Data and media
+faiss_index/
+uploaded_videos/
+**/generated_videos/
+
+# Tests
+**/test_*.py
+
+# Environment
+.envrc

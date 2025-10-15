@@ -31,7 +31,8 @@ from database import init_db
 from openai import OpenAI
 
 # ===== Global output dir =====
-VIDEO_DIR = "generated_videos"
+DATA_DIR = "/data" # Persistent volume mount point
+VIDEO_DIR = os.path.join(DATA_DIR, "generated_videos")
 if not os.path.exists(VIDEO_DIR):
     os.makedirs(VIDEO_DIR)
 
@@ -274,32 +275,55 @@ Now, create the opening sentence for the headline provided above."""
             # 2) 인트로: 자연스러운 인트로 문장 생성 + TTS + 이미지
             intro_text = self._generate_intro_sentence(title)
             intro_audio_path = os.path.join(VIDEO_DIR, f"intro_audio_{article_id}.mp3")
+            
+            logging.info("--- [Video Gen] Generating intro TTS... ---")
             gTTS(text=intro_text, lang='ko').save(intro_audio_path)
             temp_files.append(intro_audio_path)
+            logging.info("--- [Video Gen] Intro TTS generated. ---")
+
             intro_audio = mp.AudioFileClip(intro_audio_path)
+            logging.info("--- [Video Gen] Intro audio clip created. ---")
+
             intro_img_path = self.generate_scene_image(title, article_id, 999)
+            logging.info(f"--- [Video Gen] Intro image generated at: {intro_img_path} ---")
+
             intro_bg = self.ken_burns(intro_img_path, intro_audio.duration).resize((self.W, self.H))
+            logging.info("--- [Video Gen] Ken Burns effect applied to intro. ---")
+
             intro_caption = mp.ImageClip(self.render_caption_image(intro_text)).set_duration(intro_audio.duration)
+            logging.info("--- [Video Gen] Intro caption rendered. ---")
+
             intro_scene = mp.CompositeVideoClip([intro_bg, intro_caption], size=(self.W, self.H)).fx(mp.vfx.fadein, 0.6)
+            logging.info("--- [Video Gen] Intro scene composited. ---")
+
             video_clips.append(intro_scene)
             audio_clips.append(intro_audio)
 
             # 3) 본문: 문장별 이미지 생성 + TTS 길이로 씬 길이 확정
             for i, sentence in enumerate(sentences):
-                logging.info(f"[Scene {i+1}/{len(sentences)}] {sentence[:50]}...")
+                logging.info(f"[Scene {i+1}/{len(sentences)}] Processing: {sentence[:50]}...")
                 # 이미지
                 img_path = self.generate_scene_image(sentence, article_id, i)
+                logging.info(f"--- [Video Gen] Scene {i+1} image generated. ---")
                 # TTS
                 scene_audio_path = os.path.join(VIDEO_DIR, f"scene_audio_{article_id}_{i}.mp3")
                 gTTS(text=sentence, lang='ko').save(scene_audio_path)
                 temp_files.append(scene_audio_path)
+                logging.info(f"--- [Video Gen] Scene {i+1} TTS generated. ---")
+
                 scene_audio = mp.AudioFileClip(scene_audio_path)
                 duration = max(1.8, scene_audio.duration)  # 너무 짧으면 답답
+                logging.info(f"--- [Video Gen] Scene {i+1} audio clip created. ---")
 
                 # 비주얼 합성
                 bg = self.ken_burns(img_path, duration).resize((self.W, self.H))
+                logging.info(f"--- [Video Gen] Scene {i+1} Ken Burns effect applied. ---")
+
                 caption = mp.ImageClip(self.render_caption_image(sentence)).set_duration(duration)
+                logging.info(f"--- [Video Gen] Scene {i+1} caption rendered. ---")
+
                 scene = mp.CompositeVideoClip([bg, caption], size=(self.W, self.H)).fx(mp.vfx.fadein, 0.25)
+                logging.info(f"--- [Video Gen] Scene {i+1} composited. ---")
 
                 video_clips.append(scene)
                 audio_clips.append(scene_audio)

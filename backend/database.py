@@ -4,7 +4,11 @@ import os
 from datetime import datetime
 from passlib.context import CryptContext
 
-DB_FILE = 'health_dongA.db'
+DATA_DIR = "/data"
+DB_FILE = os.path.join(DATA_DIR, "health_dongA.db")
+
+# Ensure the data directory exists
+os.makedirs(DATA_DIR, exist_ok=True)
 
 # --- Password Hashing ---
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")

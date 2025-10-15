@@ -20,10 +20,14 @@ from backend.article_generator import ArticleGenerator
 # --- 페이지 설정 및 CSS 스타일링 (중복 제거) ---
 # 💡 폰트 경로 오류를 방지하기 위해 폰트 설정 전에 확인합니다.
 try:
-    plt.rcParams['font.family'] = ['NanumGothic', 'DejaVu Sans']
-    plt.rcParams['axes.unicode_minus'] = False
-except Exception:
-    pass
+    font_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'fonts', 'NanumGothic-Regular.ttf')
+    font_prop = fm.FontProperties(fname=font_path)
+    plt.rcParams['font.family'] = font_prop.get_name()
+except FileNotFoundError:
+    st.warning("나눔고딕 폰트 파일을 찾을 수 없습니다. 'fonts/NanumGothic-Regular.ttf' 경로에 폰트 파일을 추가해주세요. 일부 텍스트가 깨질 수 있습니다.")
+    plt.rcParams['font.family'] = ['DejaVu Sans'] # Fallback font
+
+plt.rcParams['axes.unicode_minus'] = False
 
 st.markdown(
     '''
@@ -37,6 +41,30 @@ st.markdown(
         margin-bottom: 2rem;
         box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         text-align: center;
+    }
+    .stats-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        justify-content: space-around;
+    }
+    .stat-card {
+        background-color: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(10px);
+        padding: 2rem;
+        border-radius: 15px;
+        text-align: center;
+        flex-grow: 1;
+        min-width: 200px;
+    }
+    .stat-number {
+        font-size: 3em;
+        font-weight: 800;
+        color: #ffffff;
+    }
+    .stat-label {
+        font-size: 1.2em;
+        color: #dddddd;
     }
 </style>
 ''', unsafe_allow_html=True)
@@ -289,43 +317,48 @@ def show_admin_page():
                 </div>
             </div>
             ''', unsafe_allow_html=True)
-            col1, col2 = st.columns(2)
-            with col1:
-                st.markdown("####  기사 수집 현황")
-                daily_stats = pd.read_sql_query('''
-                    SELECT DATE(crawled_date) as date, COUNT(*) as count, COUNT(CASE WHEN is_age_relevant = 1 THEN 1 END) as relevant_count
-                    FROM articles WHERE crawled_date > datetime('now', '-7 days') GROUP BY DATE(crawled_date) ORDER BY date
-                ''', conn)
-                if not daily_stats.empty:
-                    fig, ax = plt.subplots(figsize=(8, 4))
-                    ax.plot(daily_stats['date'], daily_stats['count'], 'o-', label='전체 기사', color='#667eea')
-                    ax.plot(daily_stats['date'], daily_stats['relevant_count'], 's-', label='관련 기사', color='#764ba2')
-                    ax.set_title('최근 7일 기사 수집 현황')
-                    ax.set_ylabel('기사 수')
-                    ax.legend()
-                    ax.tick_params(axis='x', rotation=45)
-                    plt.tight_layout()
-                    st.pyplot(fig)
-                    plt.close()
-                else: st.info("표시할 수집 데이터가 없습니다.")
-            with col2:
-                st.markdown("####   영상 제작 현황")
-                video_stats = pd.read_sql_query("SELECT production_status, COUNT(*) as count FROM videos GROUP BY production_status", conn)
-                if not video_stats.empty:
-                    fig, ax = plt.subplots(figsize=(8, 4))
-                    colors = {'completed': '#4CAF50', 'processing': '#FF9800', 'error': '#F44336', 'uploaded': '#2196F3'}
-                    status_colors = [colors.get(status, '#9E9E9E') for status in video_stats['production_status']]
-                    bars = ax.bar(video_stats['production_status'], video_stats['count'], color=status_colors)
-                    ax.set_title('영상 제작 상태 분포')
-                    ax.set_ylabel('영상 수')
-                    for bar in bars:
-                        height = bar.get_height()
-                        ax.text(bar.get_x() + bar.get_width()/2., height, f'{int(height)}', ha='center', va='bottom')
-                    plt.tight_layout()
-                    st.pyplot(fig)
-                    plt.close()
-                else: st.info("제작된 영상이 없습니다.")
-            st.markdown("####  키워드 분석")
+            
+            st.markdown("<br>", unsafe_allow_html=True)
+            st.markdown("#### 기사 수집 현황")
+            daily_stats = pd.read_sql_query('''
+                SELECT DATE(crawled_date) as date, COUNT(*) as count, COUNT(CASE WHEN is_age_relevant = 1 THEN 1 END) as relevant_count
+                FROM articles WHERE crawled_date > datetime('now', '-7 days') GROUP BY DATE(crawled_date) ORDER BY date
+            ''', conn)
+            if not daily_stats.empty:
+                fig, ax = plt.subplots(figsize=(10, 4))
+                ax.plot(daily_stats['date'], daily_stats['count'], 'o-', label='전체 기사', color='#667eea')
+                ax.plot(daily_stats['date'], daily_stats['relevant_count'], 's-', label='관련 기사', color='#764ba2')
+                ax.set_title('최근 7일 기사 수집 현황')
+                ax.set_ylabel('기사 수')
+                ax.legend()
+                ax.tick_params(axis='x', rotation=45)
+                plt.tight_layout()
+                st.pyplot(fig)
+                plt.close()
+            else: st.info("표시할 수집 데이터가 없습니다.")
+
+            st.markdown("<hr>", unsafe_allow_html=True)
+
+            st.markdown("#### 영상 제작 현황")
+            video_stats = pd.read_sql_query("SELECT production_status, COUNT(*) as count FROM videos GROUP BY production_status", conn)
+            if not video_stats.empty:
+                fig, ax = plt.subplots(figsize=(10, 4))
+                colors = {'completed': '#4CAF50', 'processing': '#FF9800', 'error': '#F44336', 'uploaded': '#2196F3'}
+                status_colors = [colors.get(status, '#9E9E9E') for status in video_stats['production_status']]
+                bars = ax.bar(video_stats['production_status'], video_stats['count'], color=status_colors)
+                ax.set_title('영상 제작 상태 분포')
+                ax.set_ylabel('영상 수')
+                for bar in bars:
+                    height = bar.get_height()
+                    ax.text(bar.get_x() + bar.get_width()/2., height, f'{int(height)}', ha='center', va='bottom')
+                plt.tight_layout()
+                st.pyplot(fig)
+                plt.close()
+            else: st.info("제작된 영상이 없습니다.")
+
+            st.markdown("<hr>", unsafe_allow_html=True)
+
+            st.markdown("#### 키워드 분석")
             keyword_stats = pd.read_sql_query("SELECT keywords FROM articles WHERE keywords != '' AND is_age_relevant = 1", conn)
             if not keyword_stats.empty:
                 all_keywords = []
