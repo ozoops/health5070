@@ -363,7 +363,7 @@ Now, create the opening sentence for the headline provided above."""
                 audio_codec="aac",
                 fps=self.FPS,
                 threads=4,
-                preset="medium",
+                preset="ultrafast",
                 bitrate="3000k"
             )
 

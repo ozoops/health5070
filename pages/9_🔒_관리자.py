@@ -310,7 +310,7 @@ def show_admin_page():
         if not stats_df.empty:
             stats = stats_df.iloc[0]
             st.markdown(
-                '''
+                f'''
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-number">{int(stats['total_articles']) if stats['total_articles'] else 0}</div>
