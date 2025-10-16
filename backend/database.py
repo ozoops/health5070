@@ -3,12 +3,9 @@ import pandas as pd
 import os
 from datetime import datetime
 from passlib.context import CryptContext
+from backend.config import DB_PATH
 
-DATA_DIR = "/data"
-DB_FILE = os.path.join(DATA_DIR, "health_dongA.db")
-
-# Ensure the data directory exists
-os.makedirs(DATA_DIR, exist_ok=True)
+DB_FILE = DB_PATH
 
 # --- Password Hashing ---
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")

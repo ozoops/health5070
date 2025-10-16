@@ -26,15 +26,13 @@ if not hasattr(Image, 'ANTIALIAS'):
 # Add the directory of the current file to the system path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from database import init_db
+from backend.config import GENERATED_VIDEOS_DIR, data_dir
 
 # OpenAI client
 from openai import OpenAI
 
 # ===== Global output dir =====
-DATA_DIR = "/data" # Persistent volume mount point
-VIDEO_DIR = os.path.join(DATA_DIR, "generated_videos")
-if not os.path.exists(VIDEO_DIR):
-    os.makedirs(VIDEO_DIR)
+VIDEO_DIR = GENERATED_VIDEOS_DIR
 
 class VideoProducer:
     def __init__(self):
@@ -46,9 +44,9 @@ class VideoProducer:
         self.W, self.H = 1280, 720   # 16:9
         self.FPS = 30
 
-    # -------------------------------
+    # ------------------------------- 
     # Public entry: 기사+스크립트 → 비디오 메타
-    # -------------------------------
+    # ------------------------------- 
     def produce_video_content(self, article, script):
         """
         article: {'id': int/str, 'title': str, 'crawled_date': 'YYYY-MM-DD ...'}
@@ -73,9 +71,9 @@ class VideoProducer:
         }
         return video_data
 
-    # -------------------------------
+    # ------------------------------- 
     # DB 저장
-    # -------------------------------
+    # ------------------------------- 
     def save_video_data(self, video_data, conn):
         c = conn.cursor()
         c.execute("""
@@ -94,9 +92,9 @@ class VideoProducer:
         conn.commit()
         return c.lastrowid
 
-    # -------------------------------
+    # ------------------------------- 
     # 폰트 경로 (한글 깨짐 방지: 나눔고딕/Noto 우선)
-    # -------------------------------
+    # ------------------------------- 
     def get_font_path(self, bold=False):
         candidates = []
         if os.name == "nt":  # Windows
@@ -118,9 +116,9 @@ class VideoProducer:
         st.warning("한글 폰트를 찾지 못해 기본 폰트를 사용합니다. 자막 품질이 낮아질 수 있습니다.")
         return None
 
-    # -------------------------------
+    # ------------------------------- 
     # 이미지 생성 (문장별 개별 생성)
-    # -------------------------------
+    # ------------------------------- 
     def generate_ai_image(self, prompt_text, image_path):
         """
         DALL·E 3으로 프롬프트 기반 일러스트 생성.
@@ -165,9 +163,9 @@ class VideoProducer:
         fallback.save(fallback_path)
         return fallback_path
 
-    # -------------------------------
+    # ------------------------------- 
     # 캡션 이미지 렌더링 (반투명 박스 + 중앙 정렬)
-    # -------------------------------
+    # ------------------------------- 
     def render_caption_image(self, text: str) -> np.ndarray:
         FONT_SIZE = 36
         MARGIN = 60
@@ -217,9 +215,9 @@ class VideoProducer:
 
         return np.array(img)
 
-    # -------------------------------
+    # ------------------------------- 
     # Ken Burns (줌 + 약한 패닝 느낌)
-    # -------------------------------
+    # ------------------------------- 
     def ken_burns(self, img_path, duration):
         base = mp.ImageClip(img_path).set_duration(duration)
         zoom_rate = random.uniform(0.015, 0.03)  # 1.5%~3%/sec
@@ -257,9 +255,9 @@ Now, create the opening sentence for the headline provided above."""
             logging.error(f"--- [Intro Generation] Failed, falling back to title. Error: {e} ---", exc_info=True)
             return title # Fallback to the original title on error
 
-    # -------------------------------
+    # ------------------------------- 
     # 메인: 동기 합성 파이프라인
-    # -------------------------------
+    # ------------------------------- 
     def create_video_file(self, article_id, title, script):
         logging.info("--- [SYNCHRONIZED VIDEO CREATION] START ---")
         temp_files = []
@@ -299,34 +297,54 @@ Now, create the opening sentence for the headline provided above."""
             video_clips.append(intro_scene)
             audio_clips.append(intro_audio)
 
-            # 3) 본문: 문장별 이미지 생성 + TTS 길이로 씬 길이 확정
-            for i, sentence in enumerate(sentences):
-                logging.info(f"[Scene {i+1}/{len(sentences)}] Processing: {sentence[:50]}...")
-                # 이미지
-                img_path = self.generate_scene_image(sentence, article_id, i)
+            # 3) 본문: 3문장씩 묶어서 처리
+            SCENE_CHUNK_SIZE = 3
+            sentence_chunks = [sentences[i:i + SCENE_CHUNK_SIZE] for i in range(0, len(sentences), SCENE_CHUNK_SIZE)]
+
+            for i, chunk in enumerate(sentence_chunks):
+                # Concatenate sentences in the chunk for prompts and captions
+                chunk_text = " ".join(chunk)
+                logging.info(f"[Scene {i+1}/{len(sentence_chunks)}] Processing chunk: {chunk_text[:70]}...")
+
+                # --- Generate single image for the whole chunk ---
+                img_path = self.generate_scene_image(chunk_text, article_id, i)
                 logging.info(f"--- [Video Gen] Scene {i+1} image generated. ---")
-                # TTS
-                scene_audio_path = os.path.join(VIDEO_DIR, f"scene_audio_{article_id}_{i}.mp3")
-                gTTS(text=sentence, lang='ko').save(scene_audio_path)
-                temp_files.append(scene_audio_path)
-                logging.info(f"--- [Video Gen] Scene {i+1} TTS generated. ---")
 
-                scene_audio = mp.AudioFileClip(scene_audio_path)
-                duration = max(1.8, scene_audio.duration)  # 너무 짧으면 답답
-                logging.info(f"--- [Video Gen] Scene {i+1} audio clip created. ---")
+                # --- Generate TTS for each sentence and combine them ---
+                chunk_audio_clips = []
+                for j, sentence in enumerate(chunk):
+                    scene_audio_path = os.path.join(VIDEO_DIR, f"scene_audio_{article_id}_{i}_{j}.mp3")
+                    gTTS(text=sentence, lang='ko').save(scene_audio_path)
+                    temp_files.append(scene_audio_path) # Add to main temp_files for cleanup
+                    chunk_audio_clips.append(mp.AudioFileClip(scene_audio_path))
+                
+                if not chunk_audio_clips:
+                    continue
 
-                # 비주얼 합성
+                concatenated_audio = mp.concatenate_audioclips(chunk_audio_clips)
+                duration = max(1.8 * len(chunk), concatenated_audio.duration) # Ensure minimum duration
+                logging.info(f"--- [Video Gen] Scene {i+1} combined audio created with duration {duration}s. ---")
+
+                # --- Create visuals for the chunk ---
                 bg = self.ken_burns(img_path, duration).resize((self.W, self.H))
                 logging.info(f"--- [Video Gen] Scene {i+1} Ken Burns effect applied. ---")
 
-                caption = mp.ImageClip(self.render_caption_image(sentence)).set_duration(duration)
+                # Caption for the whole chunk
+                caption = mp.ImageClip(self.render_caption_image(chunk_text)).set_duration(duration)
                 logging.info(f"--- [Video Gen] Scene {i+1} caption rendered. ---")
 
                 scene = mp.CompositeVideoClip([bg, caption], size=(self.W, self.H)).fx(mp.vfx.fadein, 0.25)
                 logging.info(f"--- [Video Gen] Scene {i+1} composited. ---")
 
                 video_clips.append(scene)
-                audio_clips.append(scene_audio)
+                audio_clips.append(concatenated_audio)
+
+                # Clean up individual audio clips for this chunk
+                for clip in chunk_audio_clips:
+                    try:
+                        if clip: clip.close()
+                    except Exception:
+                        pass
 
             # 4) 연결 + 오디오 세팅 + 아웃로 페이드
             final_video = mp.concatenate_videoclips(video_clips, method="compose")
@@ -384,19 +402,31 @@ Now, create the opening sentence for the headline provided above."""
                     logging.warning(f"Temp remove error {p}: {ee}")
             logging.info("--- [SYNCHRONIZED VIDEO CREATION] END ---")
 
-# -------------------------------
+# ------------------------------- 
 # Streamlit 카드 표시 (KeyError 방지)
-# -------------------------------
+# ------------------------------- 
+
 def display_video_card(video_data):
     st.markdown(f'''<div class="video-card">
-        <div class="video-title">🎬 {video_data.get('video_title','')}</div>
+        <div class="video-title">🎬 {video_data.get('video_title','')}
     ''', unsafe_allow_html=True)
 
-    video_path = video_data.get('video_path')
-    if video_path and os.path.exists(video_path):
-        st.video(video_path)
+    video_path_from_db = video_data.get('video_path')
+    
+    # video_path_from_db가 절대 경로가 아닐 수 있으므로, data_dir를 기준으로 절대 경로를 구성합니다.
+    if video_path_from_db:
+        if not os.path.isabs(video_path_from_db):
+            video_path = os.path.join(data_dir, video_path_from_db)
+        else:
+            video_path = video_path_from_db
+
+        if os.path.exists(video_path):
+            st.video(video_path)
+        else:
+            st.warning(f"비디오 파일을 찾을 수 없습니다: {video_path}")
     else:
-        st.warning(f"비디오 파일을 찾을 수 없습니다: {video_path}")
+        st.warning("비디오 경로 정보가 없습니다.")
+
 
     st.markdown(f'''
         <div class="video-meta">

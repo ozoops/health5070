@@ -1,4 +1,3 @@
-
 import streamlit as st
 
 def set_background(image_url):
@@ -33,57 +32,81 @@ def set_background(image_url):
             padding: 1rem;
         }}
 
-        /* Hero Section */
+        /* --- Theme-aware containers --- */
         .hero-section, .content-section, .login-header {{
-            background-color: rgba(0, 0, 0, 0.6) !important;
-            backdrop-filter: blur(10px) !important;
             padding: 2rem;
             border-radius: 15px;
             margin-bottom: 2rem;
+            backdrop-filter: blur(10px) !important;
+            border: 1px solid transparent;
+        }}
+
+        /* Light theme styles */
+        :root {{
+            --container-bg-color: rgba(240, 242, 246, 0.8);
+            --container-border-color: var(--gray-30);
+            --text-shadow: none;
+        }}
+
+        .hero-section, .content-section, .login-header {{
+            background-color: var(--container-bg-color) !important;
+            border-color: var(--container-border-color);
         }}
         
+        .hero-section h1, .login-header h1, .content-section h2,
+        .hero-section p, .login-header p, .content-list-item, .item-date, .footer {{
+            text-shadow: var(--text-shadow);
+        }}
+
+
+        /* Dark theme styles */
+        @media (prefers-color-scheme: dark) {{
+            :root {{
+                --container-bg-color: rgba(0, 0, 0, 0.6);
+                --container-border-color: var(--gray-80);
+                --text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+            }}
+        }}
+
         .hero-section {{
             text-align: center;
         }}
 
-        .hero-section h1, .login-header h1 {{
-            font-size: 3em;
-            font-weight: 800;
-            color: #ffffff;
-            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7);
+        .hero-section h1, .login-header h1, .content-section h2 {{
+            color: var(--text-color);
         }}
         .hero-section p, .login-header p {{
             font-size: 1.2em;
-            color: #ffffff;
-            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7);
+            color: var(--text-color);
+            opacity: 0.9;
             margin-bottom: 0;
         }}
 
         /* Content Section */
         .content-section:hover {{
-            transform: translateY(-10px) scale(1.02);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         }}
         .content-section h2 {{
             border-bottom: 2px solid var(--primary-color);
             padding-bottom: 0.5rem;
             margin-bottom: 1.5rem;
-            color: #ffffff;
         }}
         .content-list-item {{
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 0.5rem 0;
-            border-bottom: 1px solid #555;
-            color: #ffffff;
+            border-bottom: 1px solid var(--gray-40);
+            color: var(--text-color);
         }}
         .content-list-item:last-child {{
             border-bottom: none;
         }}
         .item-date {{
             font-size: 0.9em;
-            color: #dddddd;
+            color: var(--text-color);
+            opacity: 0.7;
             margin-left: 1rem;
         }}
 
@@ -94,7 +117,7 @@ def set_background(image_url):
         }}
         [data-testid="stSidebarNav"] ul li a:hover {{
             transform: scale(1.05);
-            background-color: rgba(255, 255, 255, 0.2) !important;
+            background-color: var(--secondary-background-color);
         }}
 
         /* Footer */
@@ -103,8 +126,8 @@ def set_background(image_url):
             padding: 2rem 0;
             margin-top: 4rem;
             font-size: 1.1em;
-            color: #ffffff;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+            color: var(--text-color);
+            opacity: 0.7;
         }}
 
         /* --- Styled Form Elements (Theme-aware) --- */
@@ -112,7 +135,7 @@ def set_background(image_url):
             font-weight: 700;
             border-radius: 8px;
             background-color: var(--primary-color);
-            color: white;
+            color: white; /* Button text color is often white for contrast */
         }}
         .stButton button:hover {{
             filter: brightness(1.2);

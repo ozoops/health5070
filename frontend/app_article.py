@@ -44,7 +44,7 @@ st.markdown("""
         max-width: 900px;
         margin: 0 auto;
         padding: 2rem;
-        background: white;
+        background: var(--secondary-background-color);
         border-radius: 15px;
         box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     }
@@ -52,21 +52,22 @@ st.markdown("""
     .article-title {
         font-size: 2em;
         font-weight: 800;
-        color: #2c3e50;
+        color: var(--text-color);
         line-height: 1.4;
         margin-bottom: 1rem;
     }
     
     .article-meta {
-        color: #888;
+        color: var(--text-color);
+        opacity: 0.7;
         font-size: 0.9em;
         margin-bottom: 1.5rem;
     }
     
     .article-body h3 {
-        color: #667eea;
+        color: var(--primary-color);
         font-weight: 700;
-        border-bottom: 2px solid #e0e0e0;
+        border-bottom: 2px solid var(--gray-40);
         padding-bottom: 0.5rem;
         margin-top: 2rem;
     }
@@ -97,6 +98,12 @@ st.markdown("""
         overflow: hidden;
         box-shadow: 0 4px 20px rgba(0,0,0,0.2);
     }
+    .article-footer {
+        text-align: center;
+        color: var(--text-color);
+        opacity: 0.6;
+        font-size: 0.8em;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -112,7 +119,7 @@ def main():
         return
 
     conn = init_db()
-    article, video = get_article_and_video(conn, article_id)
+    article, video, _ = get_article_and_video(conn, article_id)
 
     if not article:
         st.error(f"ID {article_id}에 해당하는 기사를 찾을 수 없습니다.")
@@ -149,7 +156,7 @@ def main():
 
     st.markdown("</div>", unsafe_allow_html=True)
     st.markdown("---")
-    st.markdown("<div style='text-align: center; color: #777; font-size: 0.8em;'>")
+    st.markdown("<div class='article-footer'>")
     st.markdown("본 정보는 동아일보의 건강 기사를 기반으로 제작되었습니다. 의료 전문가의 진료를 대체할 수 없습니다.")
     st.markdown("</div>", unsafe_allow_html=True)
 

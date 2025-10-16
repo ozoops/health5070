@@ -16,6 +16,7 @@ from backend.database import init_db, get_produced_videos, get_crawl_stats, get_
 from backend.crawler import DongACrawler
 from backend.video import VideoProducer, display_video_card
 from backend.article_generator import ArticleGenerator
+from backend.config import UPLOAD_DIR, data_dir
 
 # --- 페이지 설정 및 CSS 스타일링 (중복 제거) ---
 # 💡 폰트 경로 오류를 방지하기 위해 폰트 설정 전에 확인합니다.
@@ -49,22 +50,23 @@ st.markdown(
         justify-content: space-around;
     }
     .stat-card {
-        background-color: rgba(0, 0, 0, 0.6);
-        backdrop-filter: blur(10px);
+        background-color: var(--secondary-background-color);
         padding: 2rem;
         border-radius: 15px;
         text-align: center;
         flex-grow: 1;
         min-width: 200px;
+        border: 1px solid var(--gray-20);
     }
     .stat-number {
         font-size: 3em;
         font-weight: 800;
-        color: #ffffff;
+        color: var(--primary-color);
     }
     .stat-label {
         font-size: 1.2em;
-        color: #dddddd;
+        color: var(--text-color);
+        opacity: 0.8;
     }
 </style>
 ''', unsafe_allow_html=True)
@@ -149,13 +151,11 @@ def show_admin_page():
             
             st.markdown("---")
             
-            articles_df = pd.DataFrame()
-            if os.path.exists('health_dongA.db'):
-                articles_df = get_stored_articles(
-                    conn=init_db(),
-                    age_relevant_only=not show_all, 
-                    limit=20
-                )
+            articles_df = get_stored_articles(
+                conn=init_db(),
+                age_relevant_only=not show_all, 
+                limit=20
+            )
             
             if not articles_df.empty:
                 st.markdown(f"###  {'전체' if show_all else '50-70세 관련'} 건강 기사 ({len(articles_df)}개)")
@@ -267,20 +267,32 @@ def show_admin_page():
                 with col2:
                     if st.button("삭제", key=f"delete_video_{video['id']}", type="primary"):
                         conn = init_db()
-                        video_path = delete_video(conn, video['id'])
-                        if video_path and os.path.isfile(video_path):
-                            try:
-                                os.remove(video_path)
-                                st.success(f"'{video['video_title']}' 영상이 성공적으로 삭제되었습니다.")
+                        video_path_from_db = delete_video(conn, video['id'])
+                        
+                        if video_path_from_db:
+                            # video_path_from_db가 절대 경로가 아닐 수 있으므로, data_dir를 기준으로 절대 경로를 구성합니다.
+                            if not os.path.isabs(video_path_from_db):
+                                video_path = os.path.join(data_dir, video_path_from_db)
+                            else:
+                                video_path = video_path_from_db
+
+                            if os.path.isfile(video_path):
+                                try:
+                                    os.remove(video_path)
+                                    st.success(f"'{video['video_title']}' 영상이 성공적으로 삭제되었습니다.")
+                                    time.sleep(1)
+                                    st.rerun()
+                                except OSError as e:
+                                    st.error(f"영상 파일 삭제 중 오류가 발생했습니다: {e}")
+                            else:
+                                st.warning("영상을 DB에서 삭제했지만, 실제 파일을 찾지 못했습니다.")
                                 time.sleep(1)
                                 st.rerun()
-                            except OSError as e:
-                                st.error(f"영상 파일 삭제 중 오류가 발생했습니다: {e}")
                         else:
-                            st.warning("영상을 DB에서 삭제했지만, 실제 파일을 찾지 못했습니다.")
+                            st.warning("삭제할 영상 정보를 DB에서 찾지 못했습니다.")
                             time.sleep(1)
                             st.rerun()
-                
+
                 st.markdown("---")
         else:
             st.info("제작된 영상이 없습니다. 먼저 기사를 크롤링하고 영상을 제작해보세요.")
@@ -297,7 +309,8 @@ def show_admin_page():
         stats_df = pd.read_sql_query(stats_query, conn)
         if not stats_df.empty:
             stats = stats_df.iloc[0]
-            st.markdown(f'''
+            st.markdown(
+                '''
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-number">{int(stats['total_articles']) if stats['total_articles'] else 0}</div>
@@ -393,10 +406,7 @@ def show_admin_page():
 
         if submitted:
             if uploaded_file is not None and video_title:
-                upload_dir = "uploaded_videos"
-                os.makedirs(upload_dir, exist_ok=True)
-
-                file_path = os.path.join(upload_dir, uploaded_file.name)
+                file_path = os.path.join(UPLOAD_DIR, uploaded_file.name)
                 with open(file_path, "wb") as f:
                     f.write(uploaded_file.getbuffer())
 
@@ -427,8 +437,9 @@ def show_admin_page():
             else:
                 st.warning("동영상 파일과 제목을 모두 입력해주세요.")
 
+
 # Check for admin password
-ADMIN_PASSWORD = "admin1234"  # Consider using environment variables for this
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin0326")
 
 password = st.text_input("관리자 암호를 입력하세요", type="password")
 

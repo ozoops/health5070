@@ -8,6 +8,9 @@ primary_region = 'fra'
 
 [build]
 
+[env]
+  APP_ENV = "production"
+
 [http_service]
   internal_port = 8501
   force_https = true
@@ -17,7 +20,7 @@ primary_region = 'fra'
   processes = ['app']
 
 [[vm]]
-  memory = '1gb'
+  memory = '2gb'
   cpu_kind = 'shared'
   cpus = 1
 
