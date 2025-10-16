@@ -285,7 +285,7 @@ Now, create the opening sentence for the headline provided above."""
             intro_img_path = self.generate_scene_image(title, article_id, 999)
             logging.info(f"--- [Video Gen] Intro image generated at: {intro_img_path} ---")
 
-            intro_bg = self.ken_burns(intro_img_path, intro_audio.duration).resize((self.W, self.H))
+            intro_bg = self.ken_burns(intro_img_path, intro_audio.duration)
             logging.info("--- [Video Gen] Ken Burns effect applied to intro. ---")
 
             intro_caption = mp.ImageClip(self.render_caption_image(intro_text)).set_duration(intro_audio.duration)
@@ -326,7 +326,7 @@ Now, create the opening sentence for the headline provided above."""
                 logging.info(f"--- [Video Gen] Scene {i+1} combined audio created with duration {duration}s. ---")
 
                 # --- Create visuals for the chunk ---
-                bg = self.ken_burns(img_path, duration).resize((self.W, self.H))
+                bg = self.ken_burns(img_path, duration)
                 logging.info(f"--- [Video Gen] Scene {i+1} Ken Burns effect applied. ---")
 
                 # Caption for the whole chunk
