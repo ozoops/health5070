@@ -44,9 +44,9 @@ class VideoProducer:
         self.W, self.H = 1280, 720   # 16:9
         self.FPS = 30
 
-    # ------------------------------- 
+    # -------------------------------
     # Public entry: 기사+스크립트 → 비디오 메타
-    # ------------------------------- 
+    # -------------------------------
     def produce_video_content(self, article, script):
         """
         article: {'id': int/str, 'title': str, 'crawled_date': 'YYYY-MM-DD ...'}
@@ -71,9 +71,9 @@ class VideoProducer:
         }
         return video_data
 
-    # ------------------------------- 
+    # -------------------------------
     # DB 저장
-    # ------------------------------- 
+    # -------------------------------
     def save_video_data(self, video_data, conn):
         c = conn.cursor()
         c.execute("""
@@ -92,9 +92,9 @@ class VideoProducer:
         conn.commit()
         return c.lastrowid
 
-    # ------------------------------- 
+    # -------------------------------
     # 폰트 경로 (한글 깨짐 방지: 나눔고딕/Noto 우선)
-    # ------------------------------- 
+    # -------------------------------
     def get_font_path(self, bold=False):
         candidates = []
         if os.name == "nt":  # Windows
@@ -116,9 +116,9 @@ class VideoProducer:
         st.warning("한글 폰트를 찾지 못해 기본 폰트를 사용합니다. 자막 품질이 낮아질 수 있습니다.")
         return None
 
-    # ------------------------------- 
+    # -------------------------------
     # 이미지 생성 (문장별 개별 생성)
-    # ------------------------------- 
+    # -------------------------------
     def generate_ai_image(self, prompt_text, image_path):
         """
         DALL·E 3으로 프롬프트 기반 일러스트 생성.
@@ -163,9 +163,9 @@ class VideoProducer:
         fallback.save(fallback_path)
         return fallback_path
 
-    # ------------------------------- 
+    # -------------------------------
     # 캡션 이미지 렌더링 (반투명 박스 + 중앙 정렬)
-    # ------------------------------- 
+    # -------------------------------
     def render_caption_image(self, text: str) -> np.ndarray:
         FONT_SIZE = 36
         MARGIN = 60
@@ -215,9 +215,9 @@ class VideoProducer:
 
         return np.array(img)
 
-    # ------------------------------- 
+    # -------------------------------
     # Ken Burns (줌 + 약한 패닝 느낌)
-    # ------------------------------- 
+    # -------------------------------
     def ken_burns(self, img_path, duration):
         base = mp.ImageClip(img_path).set_duration(duration)
         zoom_rate = random.uniform(0.015, 0.03)  # 1.5%~3%/sec
@@ -255,9 +255,9 @@ Now, create the opening sentence for the headline provided above."""
             logging.error(f"--- [Intro Generation] Failed, falling back to title. Error: {e} ---", exc_info=True)
             return title # Fallback to the original title on error
 
-    # ------------------------------- 
+    # -------------------------------
     # 메인: 동기 합성 파이프라인
-    # ------------------------------- 
+    # -------------------------------
     def create_video_file(self, article_id, title, script):
         logging.info("--- [SYNCHRONIZED VIDEO CREATION] START ---")
         temp_files = []
@@ -342,7 +342,7 @@ Now, create the opening sentence for the headline provided above."""
                 # Clean up individual audio clips for this chunk
                 for clip in chunk_audio_clips:
                     try:
-                        if clip: clip.close()
+                        if clip and hasattr(clip, 'close'): clip.close()
                     except Exception:
                         pass
 
@@ -385,12 +385,12 @@ Now, create the opening sentence for the headline provided above."""
             # clip close
             for clip in video_clips:
                 try:
-                    if clip: clip.close()
+                    if clip and hasattr(clip, 'close'): clip.close()
                 except Exception:
                     pass
             for a in audio_clips:
                 try:
-                    if a: a.close()
+                    if a and hasattr(a, 'close'): clip.close()
                 except Exception:
                     pass
             # temp remove
@@ -402,9 +402,9 @@ Now, create the opening sentence for the headline provided above."""
                     logging.warning(f"Temp remove error {p}: {ee}")
             logging.info("--- [SYNCHRONIZED VIDEO CREATION] END ---")
 
-# ------------------------------- 
+# -------------------------------
 # Streamlit 카드 표시 (KeyError 방지)
-# ------------------------------- 
+# -------------------------------
 
 def display_video_card(video_data):
     st.markdown(f'''<div class="video-card">
