@@ -212,6 +212,7 @@ def show_admin_page():
                                                         'generated_title': generated_title,
                                                         'generated_content': generated_content
                                                     }
+                                                    conn = init_db()
                                                     save_generated_article(conn, new_article_data)
                                                     st.success("AI 기사가 성공적으로 생성되었습니다!")
                                                     time.sleep(1)
