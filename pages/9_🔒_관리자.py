@@ -417,7 +417,7 @@ def show_admin_page():
                     c.execute('''
                         INSERT INTO articles (title, summary, content, is_age_relevant, crawled_date, url)
                         VALUES (?, ?, ?, ?, ?, ?)
-                    ''', (video_title, video_script[:100], video_script, True, datetime.now(), f"#{video_title.replace(' ', '')}"))
+                    ''', (video_title, video_script[:100], video_script, False, datetime.now(), f"#{video_title.replace(' ', '')}"))
                     article_id = c.lastrowid
 
                     c.execute('''

@@ -272,10 +272,11 @@ Now, create the opening sentence for the headline provided above."""
 
             # 2) 인트로: 자연스러운 인트로 문장 생성 + TTS + 이미지
             intro_text = self._generate_intro_sentence(title)
+            clean_intro_text = re.sub(r'\*\*', '', intro_text)
             intro_audio_path = os.path.join(VIDEO_DIR, f"intro_audio_{article_id}.mp3")
             
             logging.info("--- [Video Gen] Generating intro TTS... ---")
-            gTTS(text=intro_text, lang='ko').save(intro_audio_path)
+            gTTS(text=clean_intro_text, lang='ko').save(intro_audio_path)
             temp_files.append(intro_audio_path)
             logging.info("--- [Video Gen] Intro TTS generated. ---")
 
@@ -288,7 +289,7 @@ Now, create the opening sentence for the headline provided above."""
             intro_bg = self.ken_burns(intro_img_path, intro_audio.duration)
             logging.info("--- [Video Gen] Ken Burns effect applied to intro. ---")
 
-            intro_caption = mp.ImageClip(self.render_caption_image(intro_text)).set_duration(intro_audio.duration)
+            intro_caption = mp.ImageClip(self.render_caption_image(clean_intro_text)).set_duration(intro_audio.duration)
             logging.info("--- [Video Gen] Intro caption rendered. ---")
 
             intro_scene = mp.CompositeVideoClip([intro_bg, intro_caption], size=(self.W, self.H)).fx(mp.vfx.fadein, 0.6)
@@ -304,6 +305,7 @@ Now, create the opening sentence for the headline provided above."""
             for i, chunk in enumerate(sentence_chunks):
                 # Concatenate sentences in the chunk for prompts and captions
                 chunk_text = " ".join(chunk)
+                clean_chunk_text = re.sub(r'\*\*', '', chunk_text)
                 logging.info(f"[Scene {i+1}/{len(sentence_chunks)}] Processing chunk: {chunk_text[:70]}...")
 
                 # --- Generate single image for the whole chunk ---
@@ -313,8 +315,9 @@ Now, create the opening sentence for the headline provided above."""
                 # --- Generate TTS for each sentence and combine them ---
                 chunk_audio_clips = []
                 for j, sentence in enumerate(chunk):
+                    clean_sentence = re.sub(r'\*\*', '', sentence)
                     scene_audio_path = os.path.join(VIDEO_DIR, f"scene_audio_{article_id}_{i}_{j}.mp3")
-                    gTTS(text=sentence, lang='ko').save(scene_audio_path)
+                    gTTS(text=clean_sentence, lang='ko').save(scene_audio_path)
                     temp_files.append(scene_audio_path) # Add to main temp_files for cleanup
                     chunk_audio_clips.append(mp.AudioFileClip(scene_audio_path))
                 
@@ -330,7 +333,7 @@ Now, create the opening sentence for the headline provided above."""
                 logging.info(f"--- [Video Gen] Scene {i+1} Ken Burns effect applied. ---")
 
                 # Caption for the whole chunk
-                caption = mp.ImageClip(self.render_caption_image(chunk_text)).set_duration(duration)
+                caption = mp.ImageClip(self.render_caption_image(clean_chunk_text)).set_duration(duration)
                 logging.info(f"--- [Video Gen] Scene {i+1} caption rendered. ---")
 
                 scene = mp.CompositeVideoClip([bg, caption], size=(self.W, self.H)).fx(mp.vfx.fadein, 0.25)
@@ -338,13 +341,6 @@ Now, create the opening sentence for the headline provided above."""
 
                 video_clips.append(scene)
                 audio_clips.append(concatenated_audio)
-
-                # Clean up individual audio clips for this chunk
-                for clip in chunk_audio_clips:
-                    try:
-                        if clip and hasattr(clip, 'close'): clip.close()
-                    except Exception:
-                        pass
 
             # 4) 연결 + 오디오 세팅 + 아웃로 페이드
             final_video = mp.concatenate_videoclips(video_clips, method="compose")
@@ -390,7 +386,7 @@ Now, create the opening sentence for the headline provided above."""
                     pass
             for a in audio_clips:
                 try:
-                    if a and hasattr(a, 'close'): clip.close()
+                    if a and hasattr(a, 'close'): a.close()
                 except Exception:
                     pass
             # temp remove
