@@ -353,6 +353,9 @@ Now, create the opening sentence for the headline provided above."""
             video_path = os.path.join(VIDEO_DIR, video_filename)
 
             logging.info(f"Writing final video to: {video_path} ...")
+            logging.info(f"Value of VIDEO_DIR is: {VIDEO_DIR}")
+            logging.info(f"Value of data_dir from config is: {data_dir}")
+            
             final_video.write_videofile(
                 video_path,
                 codec='libx264',
@@ -369,8 +372,17 @@ Now, create the opening sentence for the headline provided above."""
                     break
                 time.sleep(0.5)
 
+            # Add a definitive check
+            if os.path.exists(video_path):
+                logging.info(f"CONFIRMED: Video file exists at {video_path} after writing.")
+            else:
+                logging.warning(f"PROBLEM: Video file DOES NOT exist at {video_path} after writing.")
+
             logging.info("Final video written successfully.")
-            return video_path
+
+            # Return a path relative to the data_dir for database storage
+            relative_video_path = os.path.join('generated_videos', video_filename)
+            return relative_video_path
 
         except Exception as e:
             logging.error(f"--- [SYNCHRONIZED VIDEO CREATION] ERROR: {e} ---", exc_info=True)
@@ -416,9 +428,11 @@ def display_video_card(video_data):
         else:
             video_path = video_path_from_db
 
+        logging.info(f"Attempting to display video. Checking for file at path: {video_path}")
         if os.path.exists(video_path):
             st.video(video_path)
         else:
+            logging.warning(f"File check failed. os.path.exists returned False for path: {video_path}")
             st.warning(f"비디오 파일을 찾을 수 없습니다: {video_path}")
     else:
         st.warning("비디오 경로 정보가 없습니다.")

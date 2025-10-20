@@ -135,7 +135,6 @@ def set_background(image_url):
             font-weight: 700;
             border-radius: 8px;
             background-color: var(--primary-color);
-            color: white; /* Button text color is often white for contrast */
         }}
         .stButton button:hover {{
             filter: brightness(1.2);

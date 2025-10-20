@@ -35,7 +35,7 @@ st.markdown(
 <style>
     /* CSS is inherited from the main app, but we can add specific styles if needed */
     .main-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: var(--primary-color);
         color: white;
         padding: 2rem;
         border-radius: 15px;
@@ -95,7 +95,6 @@ def show_admin_page():
                 if st.button(" 영상 제작 시작", type="primary"):
                     producer = VideoProducer()
                     article_generator = ArticleGenerator()
-                    conn = init_db()
                     progress_bar = st.progress(0)
                     status_text = st.empty()
                     try:
@@ -117,6 +116,7 @@ def show_admin_page():
                         video_data = producer.produce_video_content(article, short_script)
                         progress_bar.progress(100)
 
+                        conn = init_db() # Get a fresh connection right before the DB write
                         video_id = producer.save_video_data(video_data, conn)
                         status_text.text(" 영상 제작 완료!")
                         st.success(f"영상이 성공적으로 제작되었습니다! (ID: {video_id})")
