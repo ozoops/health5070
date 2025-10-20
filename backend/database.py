@@ -324,3 +324,32 @@ def delete_video(conn, video_id):
         conn.commit()
         return video_path
     return None
+
+
+def get_all_generated_content(conn):
+    """
+    Retrieves all generated articles, joined with their original articles and any associated videos.
+    """
+    query = """
+        SELECT
+            ga.id as generated_article_id,
+            ga.generated_title,
+            ga.generated_content,
+            ga.created_date as generated_created_date,
+            a.id as article_id,
+            a.title as original_title,
+            a.summary as original_summary,
+            a.url as original_url,
+            v.id as video_id,
+            v.video_title,
+            v.script,
+            v.video_path,
+            v.view_count,
+            v.created_date as video_created_date,
+            v.production_status
+        FROM generated_articles ga
+        JOIN articles a ON ga.article_id = a.id
+        LEFT JOIN videos v ON ga.article_id = v.article_id
+        ORDER BY ga.created_date DESC
+    """
+    return pd.read_sql_query(query, conn)

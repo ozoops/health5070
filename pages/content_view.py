@@ -8,7 +8,7 @@ import pandas as pd
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(project_root)
 
-from backend.database import init_db, get_produced_videos, get_article_and_video, add_view_history, get_user
+from backend.database import init_db, get_all_generated_content, add_view_history, get_user
 from frontend.utils import set_background
 from frontend.auth import is_logged_in
 
@@ -31,59 +31,57 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- LOAD DATA ---
-videos_df = get_produced_videos(conn)
-if not videos_df.empty:
-    videos_df = videos_df[videos_df['production_status'] != 'uploaded']
+content_df = get_all_generated_content(conn)
+if not content_df.empty:
+    content_df = content_df[content_df['production_status'] != 'uploaded']
 
-if videos_df.empty:
+if content_df.empty:
     st.info("아직 제작된 콘텐츠가 없습니다. 관리자 페이지에서 영상을 제작해주세요.")
 else:
     sort_option = st.selectbox("정렬 기준", ["최신순", "조회순", "제목순"], label_visibility="collapsed")
     if sort_option == "조회순":
-        videos_df = videos_df.sort_values('view_count', ascending=False)
+        content_df = content_df.sort_values('view_count', ascending=False)
     elif sort_option == "제목순":
-        videos_df = videos_df.sort_values('video_title')
+        content_df = content_df.sort_values('generated_title')
 
-    st.markdown(f"총 **{len(videos_df)}**개의 콘텐츠가 있습니다.")
+    st.markdown(f"총 **{len(content_df)}**개의 콘텐츠가 있습니다.")
     st.markdown("---")
 
     user = get_user(conn, st.session_state['email'])
 
-    for _, video_row in videos_df.iterrows():
-        article_id = video_row['article_id']
-        
+    for _, content_row in content_df.iterrows():
         with st.container():
             st.markdown('<div class="content-card">', unsafe_allow_html=True)
             col1, col2 = st.columns([1, 1])
             
             with col1:
-                if video_row['video_path'] and os.path.exists(video_row['video_path']):
-                    st.video(video_row['video_path'])
-                    if user:
-                        add_view_history(conn, user['id'], video_row['id'], 'video')
+                if pd.notna(content_row['video_path']) and os.path.exists(content_row['video_path']):
+                    st.video(content_row['video_path'])
+                    if user and pd.notna(content_row['video_id']):
+                        add_view_history(conn, user['id'], content_row['video_id'], 'video')
                 else:
-                    st.warning("비디오 파일을 찾을 수 없습니다.")
+                    # Show a placeholder if there is no video
+                    st.markdown("<h4>영상 준비 중</h4>", unsafe_allow_html=True)
 
             with col2:
-                st.markdown(f"<h3>{video_row['video_title']}</h3>", unsafe_allow_html=True)
-                st.markdown(f"<p class='metadata'>게시일: {str(video_row['created_date'])[:10]} | 조회수: {video_row['view_count']}</p>", unsafe_allow_html=True)
+                st.markdown(f"<h3>{content_row['generated_title']}</h3>", unsafe_allow_html=True)
+                st.markdown(f"<p class='metadata'>게시일: {str(content_row['generated_created_date'])[:10]} | 조회수: {content_row.get('view_count', 0)}</p>", unsafe_allow_html=True)
                 
-                original_article, _, generated_article = get_article_and_video(conn, article_id)
+                with st.expander("AI 생성 맞춤 기사 전문 보기"):
+                    st.markdown(f"<h5>{content_row['generated_title']}</h5>", unsafe_allow_html=True)
+                    st.markdown(content_row['generated_content'])
+                    if user:
+                        add_view_history(conn, user['id'], content_row['article_id'], 'article')
 
-                with st.expander("AI 생성 스크립트 보기"):
-                    st.markdown(video_row['script'])
-                
-                if generated_article:
-                    with st.expander("AI 생성 맞춤 기사 전문 보기"):
-                        st.markdown(f"<h5>{generated_article['generated_title']}</h5>", unsafe_allow_html=True)
-                        st.markdown(generated_article['generated_content'])
-                        if user:
-                            add_view_history(conn, user['id'], article_id, 'article')
+                if pd.notna(content_row['script']):
+                    with st.expander("AI 생성 스크립트 보기"):
+                        st.markdown(content_row['script'])
 
-                if original_article:
+                if pd.notna(content_row['original_title']):
                     with st.expander("원본 기사 요약 보기"):
-                        st.markdown(f"<strong>{original_article['title']}</strong>", unsafe_allow_html=True)
-                        st.markdown(original_article['summary'])
-                        st.markdown(f"<a href='{original_article['url']}' target='_blank'>원본 기사 링크</a>", unsafe_allow_html=True)
+                        st.markdown(f"<strong>{content_row['original_title']}</strong>", unsafe_allow_html=True)
+                        st.markdown(content_row['original_summary'])
+                        if pd.notna(content_row['original_url']):
+                            st.markdown(f"<a href='{content_row['original_url']}' target='_blank'>원본 기사 링크</a>", unsafe_allow_html=True)
             
             st.markdown('</div>', unsafe_allow_html=True)
