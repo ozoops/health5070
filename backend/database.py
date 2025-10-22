@@ -266,10 +266,13 @@ def get_stored_articles(conn, age_relevant_only=True, limit=20):
     if age_relevant_only:
         query += "AND is_age_relevant = 1 "
     
-    query += "ORDER BY crawled_date DESC LIMIT ?"
-    params.append(limit)
+    query += "ORDER BY crawled_date DESC "
+
+    if limit is not None:
+        query += "LIMIT ?"
+        params.append(int(limit))
     
-    return pd.read_sql_query(query, conn, params=params)
+    return pd.read_sql_query(query, conn, params=params if params else None)
 
 def get_article_and_video(conn, article_id):
     conn.row_factory = sqlite3.Row

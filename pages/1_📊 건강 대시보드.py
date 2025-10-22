@@ -3,6 +3,7 @@ import pandas as pd
 import altair as alt
 import os
 import sys
+import json # Added import
 
 # Add project root to the Python path
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -33,9 +34,24 @@ def nanum_gothic_theme():
 alt.themes.register("nanum_gothic", nanum_gothic_theme)
 alt.themes.enable("nanum_gothic")
 
+# Load data from JSON file
+data_file_path = os.path.join(project_root, "data", "dashboard_data.json")
+with open(data_file_path, "r", encoding="utf-8") as f:
+    dashboard_data = json.load(f)
 
 def create_dashboard():
-    # st.set_page_config(layout="wide") # This is now set globally or in the main app
+    st.markdown(
+        """
+        <style>
+            .main-container.dashboard-container {
+                margin-left: 1.5rem;
+                margin-right: auto;
+            }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown('<div class="main-container dashboard-container">', unsafe_allow_html=True)
     st.title("📊 5070 맞춤 건강 통계 대시보드")
     st.markdown("대한민국 50대부터 70대까지의 주요 건강 지표를 확인하고 건강 관리에 참고하세요.")
     st.markdown("---")
@@ -107,13 +123,16 @@ def create_dashboard():
 
     col1, col2, col3 = st.columns(3)
     with col1:
-        chart1 = create_gauge_chart(87, "70세 이상 만성질환 보유율", "10명 중 약 9명", "#FF4B4B")
+        chart_data = dashboard_data["gauge_charts"][0]
+        chart1 = create_gauge_chart(chart_data["value"], chart_data["title"], chart_data["subtitle"], chart_data["color"])
         st.altair_chart(chart1, use_container_width=True)
     with col2:
-        chart2 = create_gauge_chart(28.3, "60대 당뇨 유병률", "4명 중 1명 이상", "#FFC300")
+        chart_data = dashboard_data["gauge_charts"][1]
+        chart2 = create_gauge_chart(chart_data["value"], chart_data["title"], chart_data["subtitle"], chart_data["color"])
         st.altair_chart(chart2, use_container_width=True)
     with col3:
-        chart3 = create_gauge_chart(64.3, "70세 이상 여성 고혈압 유병률", "3명 중 2명", "#4B79FF")
+        chart_data = dashboard_data["gauge_charts"][2]
+        chart3 = create_gauge_chart(chart_data["value"], chart_data["title"], chart_data["subtitle"], chart_data["color"])
         st.altair_chart(chart3, use_container_width=True)
 
     st.caption("데이터 출처: 통계청, 국민건강보험공단 등 최신 건강 통계 자료 (2023-2024)")
@@ -123,10 +142,7 @@ def create_dashboard():
     st.header("연령대별 주요 사망 원인 (통계청, 2022년 기준)")
 
     # --- 50대 사망 원인 ---
-    data_50s = pd.DataFrame({
-        '사망 원인': ['암 (간암)', '자살', '심장 질환', '뇌혈관 질환'],
-        '사망률 (인구 10만 명당)': [95.6, 28.9, 25.1, 20.5]
-    })
+    data_50s = pd.DataFrame(dashboard_data["mortality_data_50s"])
     chart_50s = alt.Chart(data_50s).mark_bar().encode(
         x=alt.X('사망률 (인구 10만 명당):Q', title='사망률 (인구 10만 명당)'),
         y=alt.Y('사망 원인:N', sort='-x', title='사망 원인'),
@@ -136,10 +152,7 @@ def create_dashboard():
     )
 
     # --- 70대 사망 원인 ---
-    data_70s = pd.DataFrame({
-        '사망 원인': ['암 (폐암)', '심장 질환', '뇌혈관 질환', '폐렴', '알츠하이머병'],
-        '사망률 (인구 10만 명당)': [444.5, 189.2, 120.1, 115.7, 78.9]
-    })
+    data_70s = pd.DataFrame(dashboard_data["mortality_data_70s"])
     chart_70s = alt.Chart(data_70s).mark_bar().encode(
         x=alt.X('사망률 (인구 10만 명당):Q', title='사망률 (인구 10만 명당)'),
         y=alt.Y('사망 원인:N', sort='-x', title='사망 원인'),
@@ -158,12 +171,7 @@ def create_dashboard():
 
     # --- 만성질환 유병률 ---
     st.header("주요 만성질환 유병률 (2023년 기준)")
-    chronic_data = pd.DataFrame({
-        '질환명': ['고혈압', '당뇨병', '만성콩팥병', '비만(남성)'],
-        '50대': [35.8, 19.7, 10.1, 48.1],
-        '60대': [55.4, 28.3, 15.5, 39.7],
-        '70대 이상': [68.1, 31.2, 25.1, 28.5]
-    })
+    chronic_data = pd.DataFrame(dashboard_data["chronic_disease_prevalence"])
 
     chronic_data_melted = chronic_data.melt('질환명', var_name='연령대', value_name='유병률 (%)')
 
@@ -171,10 +179,12 @@ def create_dashboard():
         x=alt.X('연령대:N', title='연령대'),
         y=alt.Y('유병률 (%):Q', title='유병률 (%)'),
         color='연령대:N',
-        column='질환명:N',
+        row=alt.Row('질환명:N', header=alt.Header(titleOrient="bottom", labelOrient="bottom")),
         tooltip=['연령대', '질환명', '유병률 (%)']
     ).properties(
-        title='연령대별 주요 만성질환 유병률 비교'
+        title='연령대별 주요 만성질환 유병률 비교',
+        height=150, # Height for each individual chart
+        width=alt.Step(80) # Width for each individual chart
     )
     st.altair_chart(chart_chronic, use_container_width=True)
     st.markdown("""
@@ -184,5 +194,6 @@ def create_dashboard():
     """, unsafe_allow_html=True)
 
 
+    st.markdown('</div>', unsafe_allow_html=True)
 if __name__ == "__main__":
     create_dashboard()
