@@ -147,5 +147,34 @@ def set_background(image_url):
         [data-testid="stSidebar"] .stButton button:hover {{
             background-color: #c94f4f !important;
         }}
+
+        /* --- Mobile Responsiveness --- */
+        @media (max-width: 768px) {{
+            .main-container {{
+                padding: 0.5rem;
+            }}
+            .hero-section, .content-section, .login-header {{
+                padding: 1rem;
+                margin-bottom: 1rem;
+            }}
+            .hero-section h1, .login-header h1 {{
+                font-size: 1.8em;
+            }}
+            .hero-section p, .login-header p {{
+                font-size: 1em;
+            }}
+            .content-section h2 {{
+                font-size: 1.5em;
+            }}
+            .content-list-item {{
+                flex-direction: column;
+                align-items: flex-start;
+            }}
+            .item-date {{
+                margin-left: 0;
+                margin-top: 0.25rem;
+                font-size: 0.8em;
+            }}
+        }}
     </style>
     """, unsafe_allow_html=True)
