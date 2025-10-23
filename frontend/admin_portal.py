@@ -18,20 +18,27 @@ from backend.video import VideoProducer, display_video_card
 from backend.article_generator import ArticleGenerator
 from backend.config import UPLOAD_DIR, data_dir
 
-# --- 페이지 설정 및 CSS 스타일링 (중복 제거) ---
-# 💡 폰트 경로 오류를 방지하기 위해 폰트 설정 전에 확인합니다.
-try:
-    font_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'fonts', 'NanumGothic-Regular.ttf')
-    font_prop = fm.FontProperties(fname=font_path)
-    plt.rcParams['font.family'] = font_prop.get_name()
-except FileNotFoundError:
-    st.warning("나눔고딕 폰트 파일을 찾을 수 없습니다. 'fonts/NanumGothic-Regular.ttf' 경로에 폰트 파일을 추가해주세요. 일부 텍스트가 깨질 수 있습니다.")
-    plt.rcParams['font.family'] = ['DejaVu Sans'] # Fallback font
 
-plt.rcParams['axes.unicode_minus'] = False
+def _configure_admin_environment() -> None:
+    """관리자 화면을 위한 폰트 및 공통 CSS를 적용합니다."""
+    if st.session_state.get('_admin_env_configured'):
+        return
+    try:
+        font_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            'fonts',
+            'NanumGothic-Regular.ttf'
+        )
+        font_prop = fm.FontProperties(fname=font_path)
+        plt.rcParams['font.family'] = font_prop.get_name()
+    except FileNotFoundError:
+        st.warning("나눔고딕 폰트를 찾을 수 없습니다. 'fonts/NanumGothic-Regular.ttf' 경로에 폰트를 추가해 주세요. 일부 텍스트가 깨질 수 있습니다.")
+        plt.rcParams['font.family'] = ['DejaVu Sans']  # Fallback font
 
-st.markdown(
-    '''
+    plt.rcParams['axes.unicode_minus'] = False
+
+    st.markdown(
+        '''
 <style>
     /* CSS is inherited from the main app, but we can add specific styles if needed */
     .main-header {
@@ -69,10 +76,16 @@ st.markdown(
         opacity: 0.8;
     }
 </style>
-''', unsafe_allow_html=True)
+''',
+        unsafe_allow_html=True
+    )
+    st.session_state['_admin_env_configured'] = True
 
-if 'video_to_produce' not in st.session_state:
-    st.session_state.video_to_produce = None
+
+def _ensure_admin_state() -> None:
+    if 'video_to_produce' not in st.session_state:
+        st.session_state.video_to_produce = None
+
 
 def show_admin_page():
     st.markdown(
@@ -310,29 +323,25 @@ def show_admin_page():
         stats_df = pd.read_sql_query(stats_query, conn)
         if not stats_df.empty:
             stats = stats_df.iloc[0]
-            st.markdown(
-                f'''
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-number">{int(stats['total_articles']) if stats['total_articles'] else 0}</div>
-                    <div class="stat-label">총 수집 기사</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number">{int(stats['relevant_articles']) if stats['relevant_articles'] else 0}</div>
-                    <div class="stat-label">관련 기사</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number">{int(stats['total_videos']) if stats['total_videos'] else 0}</div>
-                    <div class="stat-label">제작된 영상</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number">{int(stats['total_views']) if stats['total_views'] else 0}</div>
-                    <div class="stat-label">총 조회수</div>
-                </div>
-            </div>
-            ''', unsafe_allow_html=True)
-            
-            st.markdown("<br>", unsafe_allow_html=True)
+            total_articles = int(stats['total_articles']) if stats['total_articles'] else 0
+            relevant_articles = int(stats['relevant_articles']) if stats['relevant_articles'] else 0
+            total_videos = int(stats['total_videos']) if stats['total_videos'] else 0
+            total_views = int(stats['total_views']) if stats['total_views'] else 0
+
+            st.markdown("#### 제작 통계 및 분석")
+            metric_cols = st.columns(4)
+            metrics = [
+                ("총 수집 기사", f"{total_articles:,}"),
+                ("관련 기사", f"{relevant_articles:,}"),
+                ("제작된 영상", f"{total_videos:,}"),
+                ("총 조회수", f"{total_views:,}"),
+            ]
+
+            for col, (label, value) in zip(metric_cols, metrics):
+                with col:
+                    st.metric(label, value)
+
+            st.markdown("")
             st.markdown("#### 기사 수집 현황")
             daily_stats = pd.read_sql_query('''
                 SELECT DATE(crawled_date) as date, COUNT(*) as count, COUNT(CASE WHEN is_age_relevant = 1 THEN 1 END) as relevant_count
@@ -439,14 +448,22 @@ def show_admin_page():
                 st.warning("동영상 파일과 제목을 모두 입력해주세요.")
 
 
-# Check for admin password
-ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin0326")
+ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'admin0326')
 
-password = st.text_input("관리자 암호를 입력하세요", type="password")
 
-if password == ADMIN_PASSWORD:
-    show_admin_page()
-elif password:
-    st.error("암호가 올바르지 않습니다.")
-else:
-    st.info("관리자 페이지에 접근하려면 암호를 입력하세요.")
+def render_admin_portal() -> None:
+    _configure_admin_environment()
+    _ensure_admin_state()
+
+    password = st.text_input('관리자 비밀번호를 입력하세요', type='password')
+
+    if password == ADMIN_PASSWORD:
+        show_admin_page()
+    elif password:
+        st.error('비밀번호가 올바르지 않습니다.')
+    else:
+        st.info('관리자 기능을 이용하려면 비밀번호를 입력해 주세요.')
+
+
+if __name__ == '__main__':
+    render_admin_portal()

@@ -8,10 +8,14 @@ project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(project_root)
 
 from frontend.auth import login, is_logged_in, logout, signup
+from frontend.admin_portal import render_admin_portal
 from frontend.utils import set_background
 
 # Set background
 set_background("https://images.unsplash.com/photo-1576091160550-2173dba999ef?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D")
+
+if "show_admin_portal" not in st.session_state:
+    st.session_state.show_admin_portal = False
 
 st.title("👤 로그인")
 
@@ -67,3 +71,16 @@ else:
                         st.info("이제 위 로그인 양식에서 로그인할 수 있습니다.")
                     else:
                         st.error(message)
+
+st.markdown("---")
+with st.container():
+    st.markdown('<div style=\'text-align:right;font-size:0.9em;color:#bbb;\'>관리자 모드</div>', unsafe_allow_html=True)
+    if not st.session_state.show_admin_portal:
+        if st.button("관리자 모드 열기", key="btn_open_admin_portal"):
+            st.session_state.show_admin_portal = True
+            st.rerun()
+    else:
+        render_admin_portal()
+        if st.button("관리자 모드 닫기", key="btn_close_admin_portal"):
+            st.session_state.show_admin_portal = False
+            st.rerun()
