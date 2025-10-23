@@ -116,7 +116,7 @@ def set_background(image_url):
             border-radius: 8px;
         }}
         [data-testid="stSidebarNav"] ul li a:hover {{
-            transform: scale(1.05);
+            transform: scale(1.25);
             background-color: var(--secondary-background-color);
         }}
 

@@ -8,7 +8,7 @@ import streamlit as st
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(project_root)
 
-from backend.database import init_db, get_stored_articles, get_produced_videos
+from backend.database import init_db, get_all_generated_content, get_produced_videos
 from frontend.auth import is_logged_in
 from frontend.utils import set_background
 
@@ -34,16 +34,55 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-articles = get_stored_articles(conn, limit=None) # Show all articles
-if not isinstance(articles, pd.DataFrame):
-    articles = pd.DataFrame()
+st.markdown('<div class="content-section">', unsafe_allow_html=True)
+st.subheader("🔍 콘텐츠 검색")
+search_keyword = st.text_input("키워드를 입력하세요.", "").strip()
+search_type = st.radio("검색 대상", ("전체", "뉴스", "영상"), horizontal=True)
+st.markdown('</div>', unsafe_allow_html=True)
 
-videos = get_produced_videos(conn)
-if not isinstance(videos, pd.DataFrame):
-    videos = pd.DataFrame()
+generated_articles_all = get_all_generated_content(conn)
+if not isinstance(generated_articles_all, pd.DataFrame):
+    generated_articles_all = pd.DataFrame()
+
+videos_all = get_produced_videos(conn)
+if not isinstance(videos_all, pd.DataFrame):
+    videos_all = pd.DataFrame()
 else:
-    videos = videos[videos["production_status"].isin(["completed", "uploaded"])]
-    videos = videos.sort_values("created_date", ascending=False).head(5)
+    videos_all = videos_all[videos_all["production_status"].isin(["completed", "uploaded"])]
+    videos_all = videos_all.sort_values("created_date", ascending=False)
+
+search_active = bool(search_keyword)
+show_news_column = search_type != "영상"
+show_video_column = search_type != "뉴스"
+
+if search_active:
+    keyword = search_keyword.lower()
+
+    if search_type in ("전체", "뉴스"):
+        articles_mask = generated_articles_all.apply(
+            lambda row: keyword in str(row["generated_title"]).lower()
+            or keyword in str(row["generated_content"]).lower(),
+            axis=1,
+        )
+        generated_articles = generated_articles_all[articles_mask]
+    else:
+        generated_articles = pd.DataFrame()
+
+    if search_type in ("전체", "영상"):
+        videos_mask = videos_all.apply(
+            lambda row: keyword in str(row["video_title"]).lower()
+            or keyword in str(row["script"]).lower()
+            or keyword in str(row["article_title"]).lower(),
+            axis=1,
+        )
+        videos = videos_all[videos_mask]
+    else:
+        videos = pd.DataFrame()
+else:
+    generated_articles = (
+        generated_articles_all if search_type != "영상" else pd.DataFrame()
+    )
+    videos = videos_all if search_type != "뉴스" else pd.DataFrame()
 
 
 def safe_page_link(target_path: str, label: str, sidebar_hint: Optional[str] = None) -> None:
@@ -68,22 +107,38 @@ with col_news:
         unsafe_allow_html=True,
     )
 
-    if articles.empty:
-        st.info("수집된 최신 뉴스가 아직 없습니다.")
+    if not show_news_column:
+        st.info("검색 대상이 '영상'으로 설정되어 뉴스가 표시되지 않습니다.")
+    elif search_active:
+        if generated_articles.empty:
+            st.info("검색된 뉴스가 없습니다.")
+        else:
+            st.success(f"'{search_keyword}' 관련 뉴스 결과: {len(generated_articles)}건")
+            for _, article in generated_articles.iterrows():
+                date_str = pd.to_datetime(article["generated_created_date"]).strftime("%Y.%m.%d")
+                expander_title = f"{article['generated_title']} ({date_str})"
+                with st.expander(expander_title):
+                    st.write(article['generated_content'])
+                    st.markdown(f"<a href='{article['original_url']}' target='_blank'>원문보기</a>", unsafe_allow_html=True)
     else:
-        for _, article in articles.iterrows():
-            date_str = pd.to_datetime(article["crawled_date"]).strftime("%Y.%m.%d")
-            st.markdown(
-                f"""
-                <div class="content-list-item">
-                    <span>{article['title']}</span>
-                    <span class="item-date">{date_str}</span>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+        if generated_articles.empty:
+            st.info("생성된 AI 기사가 아직 없습니다.")
+        else:
+            for _, article in generated_articles.head(5).iterrows():
+                date_str = pd.to_datetime(article["generated_created_date"]).strftime("%Y.%m.%d")
+                expander_title = f"{article['generated_title']} ({date_str})"
+                with st.expander(expander_title):
+                    st.write(article['generated_content'])
+                    st.markdown(f"<a href='{article['original_url']}' target='_blank'>원문보기</a>", unsafe_allow_html=True)
 
-    safe_page_link("pages/3_📰 콘텐츠 보기.py", "뉴스 더보기", "📰 콘텐츠 보기")
+            if len(generated_articles) > 5:
+                with st.expander("뉴스 더보기"):
+                    for _, article in generated_articles.iloc[5:].iterrows():
+                        date_str = pd.to_datetime(article["generated_created_date"]).strftime("%Y.%m.%d")
+                        expander_title = f"{article['generated_title']} ({date_str})"
+                        with st.expander(expander_title):
+                            st.write(article['generated_content'])
+                            st.markdown(f"<a href='{article['original_url']}' target='_blank'>원문보기</a>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
 with col_videos:
@@ -95,22 +150,41 @@ with col_videos:
         unsafe_allow_html=True,
     )
 
-    if videos.empty:
-        st.info("제작이 완료된 영상이 아직 없습니다.")
+    if not show_video_column:
+        st.info("검색 대상이 '뉴스'로 설정되어 영상이 표시되지 않습니다.")
+    elif search_active:
+        if videos.empty:
+            st.info("검색된 영상이 없습니다.")
+        else:
+            st.success(f"'{search_keyword}' 관련 영상 결과: {len(videos)}건")
+            for _, video in videos.iterrows():
+                date_str = pd.to_datetime(video["created_date"]).strftime("%Y.%m.%d")
+                expander_title = f"{video['video_title']} ({date_str})"
+                with st.expander(expander_title):
+                    if os.path.exists(video["video_path"]):
+                        st.video(video["video_path"])
+                    st.write(video["script"])
     else:
-        for _, video in videos.iterrows():
-            date_str = pd.to_datetime(video["created_date"]).strftime("%Y.%m.%d")
-            st.markdown(
-                f"""
-                <div class="content-list-item">
-                    <span>{video['video_title']}</span>
-                    <span class="item-date">{date_str}</span>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+        if videos.empty:
+            st.info("제작이 완료된 영상이 아직 없습니다.")
+        else:
+            for _, video in videos.head(5).iterrows():
+                date_str = pd.to_datetime(video["created_date"]).strftime("%Y.%m.%d")
+                expander_title = f"{video['video_title']} ({date_str})"
+                with st.expander(expander_title):
+                    if os.path.exists(video["video_path"]):
+                        st.video(video["video_path"])
+                    st.write(video["script"])
 
-    safe_page_link("pages/4_🎬 영상 보기.py", "영상 더보기", "🎬 영상 보기")
+            if len(videos) > 5:
+                with st.expander("영상 더보기"):
+                    for _, video in videos.iloc[5:].iterrows():
+                        date_str = pd.to_datetime(video["created_date"]).strftime("%Y.%m.%d")
+                        expander_title = f"{video['video_title']} ({date_str})"
+                        with st.expander(expander_title):
+                            if os.path.exists(video["video_path"]):
+                                st.video(video["video_path"])
+                            st.write(video["script"])
     st.markdown("</div>", unsafe_allow_html=True)
 
 st.markdown(

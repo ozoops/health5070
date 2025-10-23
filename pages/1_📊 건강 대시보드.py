@@ -44,7 +44,7 @@ def create_dashboard():
         """
         <style>
             .main-container.dashboard-container {
-                margin-left: 1.5rem;
+                margin-left: auto;
                 margin-right: auto;
             }
         </style>
@@ -60,6 +60,8 @@ def create_dashboard():
     st.header("주요 건강 현황 (50-70대)")
 
     def create_gauge_chart(value, title, subtitle, color):
+        subtitle_display = subtitle.replace(" / ", "\n")
+
         source = pd.DataFrame({
             "value": [value],
             "text_value": [f'{value:.1f}%']
@@ -84,10 +86,10 @@ def create_dashboard():
         text_value = alt.Chart(source).mark_text(
             align='center',
             baseline='middle',
-            fontSize=45,
+            fontSize=52,
             fontWeight='bold',
             color='white', # Changed to white
-            dy=-10 # Move it up slightly
+            dy=-5 # Move it up slightly
         ).encode(
             text='text_value:N'
         )
@@ -95,47 +97,47 @@ def create_dashboard():
         text_title = alt.Chart(pd.DataFrame({'value': [title]})).mark_text(
             align='center',
             baseline='middle', # Center it
-            fontSize=18,
+            fontSize=20,
             fontWeight='bold',
             color='white', # Changed to white
-            dy=40 # Position below the main value
+            dy=55 # Position below the main value
         ).encode(
             text='value:N'
         )
         
-        text_subtitle = alt.Chart(pd.DataFrame({'value': [subtitle]})).mark_text(
+        text_subtitle = alt.Chart(pd.DataFrame({'value': [subtitle_display]})).mark_text(
             align='center',
             baseline='middle', # Center it
             fontSize=14,
             color='#D3D3D3', # Lighter gray
-            dy=70 # Position below the title
+            dy=95, # Position below the title
+            lineHeight=18
         ).encode(
             text='value:N'
         )
 
         chart = (background + foreground + text_value + text_title + text_subtitle).properties(
-            width=300,
-            height=300
+            width=250,
+            height=250
         ).configure_view(
             strokeWidth=0
         )
         return chart
 
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3 = st.columns(3, gap="small")
     with col1:
         chart_data = dashboard_data["gauge_charts"][0]
         chart1 = create_gauge_chart(chart_data["value"], chart_data["title"], chart_data["subtitle"], chart_data["color"])
-        st.altair_chart(chart1, use_container_width=True)
+        st.altair_chart(chart1)
     with col2:
         chart_data = dashboard_data["gauge_charts"][1]
         chart2 = create_gauge_chart(chart_data["value"], chart_data["title"], chart_data["subtitle"], chart_data["color"])
-        st.altair_chart(chart2, use_container_width=True)
+        st.altair_chart(chart2)
     with col3:
         chart_data = dashboard_data["gauge_charts"][2]
         chart3 = create_gauge_chart(chart_data["value"], chart_data["title"], chart_data["subtitle"], chart_data["color"])
-        st.altair_chart(chart3, use_container_width=True)
+        st.altair_chart(chart3)
 
-    st.caption("데이터 출처: 통계청, 국민건강보험공단 등 최신 건강 통계 자료 (2023-2024)")
     st.markdown("---")
 
     # --- Charts ---
@@ -143,20 +145,28 @@ def create_dashboard():
 
     # --- 50대 사망 원인 ---
     data_50s = pd.DataFrame(dashboard_data["mortality_data_50s"])
+    data_50s = data_50s.rename(columns={
+        "사망률 (인구 10만 명당, 2023년)": "사망률",
+        "비고 (2023년 기준)": "비고"
+    })
     chart_50s = alt.Chart(data_50s).mark_bar().encode(
-        x=alt.X('사망률 (인구 10만 명당):Q', title='사망률 (인구 10만 명당)'),
+        x=alt.X('사망률:Q', title='사망률 (인구 10만 명당, 2023년)'),
         y=alt.Y('사망 원인:N', sort='-x', title='사망 원인'),
-        tooltip=['사망 원인', '사망률 (인구 10만 명당)']
+        tooltip=['사망 원인', '사망률', '비고']
     ).properties(
         title='50대 주요 사망 원인'
     )
 
     # --- 70대 사망 원인 ---
     data_70s = pd.DataFrame(dashboard_data["mortality_data_70s"])
+    data_70s = data_70s.rename(columns={
+        "사망률 (인구 10만 명당, 2023년)": "사망률",
+        "비고 (2023년 기준)": "비고"
+    })
     chart_70s = alt.Chart(data_70s).mark_bar().encode(
-        x=alt.X('사망률 (인구 10만 명당):Q', title='사망률 (인구 10만 명당)'),
+        x=alt.X('사망률:Q', title='사망률 (인구 10만 명당, 2023년)'),
         y=alt.Y('사망 원인:N', sort='-x', title='사망 원인'),
-        tooltip=['사망 원인', '사망률 (인구 10만 명당)']
+        tooltip=['사망 원인', '사망률', '비고']
     ).properties(
         title='70대 주요 사망 원인'
     )
@@ -183,7 +193,7 @@ def create_dashboard():
         tooltip=['연령대', '질환명', '유병률 (%)']
     ).properties(
         title='연령대별 주요 만성질환 유병률 비교',
-        height=150, # Height for each individual chart
+        height=100, # Height for each individual chart
         width=alt.Step(80) # Width for each individual chart
     )
     st.altair_chart(chart_chronic, use_container_width=True)
