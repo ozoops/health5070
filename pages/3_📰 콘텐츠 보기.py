@@ -13,7 +13,7 @@ from frontend.auth import is_logged_in
 from frontend.utils import set_background
 
 st.set_page_config(page_title="콘텐츠 허브", layout="wide")
-set_background("https://images.unsplash.com/photo-1579546929518-9e396f3cc809?q=80&w=2070&auto=format&fit=crop")
+set_background("https://images.unsplash.com/photo-1457369804613-52c61a468e7d?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D")
 
 conn = init_db()
 

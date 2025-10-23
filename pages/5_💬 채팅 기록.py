@@ -11,7 +11,7 @@ from frontend.utils import set_background
 from frontend.auth import is_logged_in
 
 st.set_page_config(page_title="AI 상담 기록", layout="wide")
-set_background("https://images.unsplash.com/photo-1589792939093-345341b4c48c?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D")
+set_background("https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D")
 
 st.title("📜 AI 상담 기록")
 

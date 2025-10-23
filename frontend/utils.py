@@ -1,6 +1,14 @@
 import streamlit as st
+import time
 
 def set_background(image_url):
+    cache_buster = int(time.time())
+    # Check if the URL already has query parameters
+    if '?' in image_url:
+        image_url_with_buster = f"{image_url}&v={cache_buster}"
+    else:
+        image_url_with_buster = f"{image_url}?v={cache_buster}"
+        
     st.markdown(f"""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&display=swap');
@@ -11,7 +19,7 @@ def set_background(image_url):
         }}
         
         [data-testid="stAppViewContainer"] {{
-            background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url("{image_url}");
+            background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url("{image_url_with_buster}");
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
