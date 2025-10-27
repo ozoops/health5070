@@ -8,7 +8,13 @@ import streamlit as st
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(project_root)
 
-from backend.database import init_db, get_all_generated_content, get_produced_videos
+from backend.database import (
+    init_db,
+    get_all_generated_content,
+    get_produced_videos,
+    add_view_history,
+    get_user,
+)
 from frontend.auth import is_logged_in
 from frontend.utils import set_background
 
@@ -22,6 +28,13 @@ if not is_logged_in():
     st.info("왼쪽 사이드바에서 로그인 또는 회원가입을 진행해주세요.")
     st.stop()
 
+user = get_user(conn, st.session_state.get("email"))
+if not user:
+    st.error("로그인 정보가 확인되지 않습니다. 다시 로그인해 주세요.")
+    st.stop()
+
+user_id = user["id"]
+
 st.markdown('<div class="main-container">', unsafe_allow_html=True)
 
 st.markdown(
@@ -34,11 +47,9 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-st.markdown('<div class="content-section">', unsafe_allow_html=True)
 st.subheader("🔍 콘텐츠 검색")
 search_keyword = st.text_input("키워드를 입력하세요.", "").strip()
 search_type = st.radio("검색 대상", ("전체", "뉴스", "영상"), horizontal=True)
-st.markdown('</div>', unsafe_allow_html=True)
 
 generated_articles_all = get_all_generated_content(conn)
 if not isinstance(generated_articles_all, pd.DataFrame):
@@ -95,6 +106,45 @@ def safe_page_link(target_path: str, label: str, sidebar_hint: Optional[str] = N
             f'<div style="text-align: right;"><em>사이드바에서 "{hint}" 페이지를 선택해주세요.</em></div>',
             unsafe_allow_html=True,
         )
+
+
+def render_video_entry(video, key_suffix: str = "") -> None:
+    """Display a video entry with playback handling and history logging."""
+    if pd.isna(video.get("id")):
+        st.warning("영상 ID를 찾을 수 없어 시청 기록에 저장하지 못했습니다.")
+        return
+
+    video_id = int(video["id"])
+    suffix = f"_{key_suffix}" if key_suffix else ""
+    watch_state_key = f"video_watch_{video_id}{suffix}"
+    button_key = f"watch_btn_{video_id}{suffix}"
+    logged_state_key = f"video_logged_{video_id}"
+
+    if st.button("▶️ 영상 재생", key=button_key):
+        st.session_state[watch_state_key] = True
+
+    if st.session_state.get(watch_state_key):
+        newly_logged = False
+        if not st.session_state.get(logged_state_key):
+            add_view_history(conn, user_id, video_id, "video")
+            st.session_state[logged_state_key] = True
+            newly_logged = True
+
+        if newly_logged:
+            st.success("시청 기록에 저장되었습니다.")
+        else:
+            st.caption("이미 시청 기록에 저장된 영상입니다.")
+
+        video_path = video.get("video_path")
+        if video_path and os.path.exists(video_path):
+            st.video(video_path)
+        else:
+            st.info("영상 파일을 찾을 수 없어 스크립트만 표시합니다.")
+
+        if video.get("script"):
+            st.write(video["script"])
+    else:
+        st.caption("버튼을 눌러 영상을 재생하면 시청 기록에 저장됩니다.")
 
 col_news, col_videos = st.columns(2)
 
@@ -161,9 +211,7 @@ with col_videos:
                 date_str = pd.to_datetime(video["created_date"]).strftime("%Y.%m.%d")
                 expander_title = f"{video['video_title']} ({date_str})"
                 with st.expander(expander_title):
-                    if os.path.exists(video["video_path"]):
-                        st.video(video["video_path"])
-                    st.write(video["script"])
+                    render_video_entry(video, key_suffix="search")
     else:
         if videos.empty:
             st.info("제작이 완료된 영상이 아직 없습니다.")
@@ -172,9 +220,7 @@ with col_videos:
                 date_str = pd.to_datetime(video["created_date"]).strftime("%Y.%m.%d")
                 expander_title = f"{video['video_title']} ({date_str})"
                 with st.expander(expander_title):
-                    if os.path.exists(video["video_path"]):
-                        st.video(video["video_path"])
-                    st.write(video["script"])
+                    render_video_entry(video, key_suffix="recent")
 
             if len(videos) > 5:
                 with st.expander("영상 더보기"):
@@ -182,9 +228,7 @@ with col_videos:
                         date_str = pd.to_datetime(video["created_date"]).strftime("%Y.%m.%d")
                         expander_title = f"{video['video_title']} ({date_str})"
                         with st.expander(expander_title):
-                            if os.path.exists(video["video_path"]):
-                                st.video(video["video_path"])
-                            st.write(video["script"])
+                            render_video_entry(video, key_suffix="more")
     st.markdown("</div>", unsafe_allow_html=True)
 
 st.markdown(
