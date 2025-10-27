@@ -63,7 +63,7 @@ if is_logged_in():
                 </div>
             ''', unsafe_allow_html=True)
         
-        st.markdown('<a href="/content_view" target="_self" class="custom-button">뉴스 더보기</a>', unsafe_allow_html=True)
+        st.markdown('<a href="/3_📰_콘텐츠_보기" target="_self" class="custom-button">뉴스 더보기</a>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
     if not videos.empty:
@@ -80,7 +80,7 @@ if is_logged_in():
                 </div>
             ''', unsafe_allow_html=True)
 
-        st.markdown('<a href="/video_view" target="_self" class="custom-button">영상 더보기</a>', unsafe_allow_html=True)
+        st.markdown('<a href="/3_📰_콘텐츠_보기" target="_self" class="custom-button">영상 더보기</a>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
     
     st.markdown('<div class="footer">© 2025 헬스케어 5070 프로젝트팀. All rights reserved.</div>', unsafe_allow_html=True)
