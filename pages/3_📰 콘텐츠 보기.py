@@ -9,8 +9,28 @@ project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(project_root)
 
 from backend.database import init_db, get_all_generated_content, get_produced_videos
+from backend.config import data_dir
 from frontend.auth import is_logged_in
 from frontend.utils import set_background, render_theme_selector
+
+
+def resolve_video_path(raw_path: Optional[str]) -> Optional[str]:
+    """Return absolute path for stored video path (handles Fly.io /data mount)."""
+    if not raw_path:
+        return None
+    if os.path.isabs(raw_path):
+        return raw_path
+    sanitized = raw_path.lstrip("/\\")
+    return os.path.join(data_dir, sanitized)
+
+
+def render_video_player(video_row: pd.Series) -> None:
+    """Safely render video player if file exists."""
+    resolved_path = resolve_video_path(video_row.get("video_path"))
+    if resolved_path and os.path.exists(resolved_path):
+        st.video(resolved_path)
+    else:
+        st.warning("���� ������ ã�� �� �����ϴ�.")
 
 st.set_page_config(page_title="콘텐츠 허브", layout="wide")
 theme_mode = render_theme_selector()
@@ -163,8 +183,7 @@ with col_videos:
                 date_str = pd.to_datetime(video["created_date"]).strftime("%Y.%m.%d")
                 expander_title = f"{video['video_title']} ({date_str})"
                 with st.expander(expander_title):
-                    if os.path.exists(video["video_path"]):
-                        st.video(video["video_path"])
+                    render_video_player(video)
                     st.write(video["script"])
     else:
         if videos.empty:
@@ -174,8 +193,7 @@ with col_videos:
                 date_str = pd.to_datetime(video["created_date"]).strftime("%Y.%m.%d")
                 expander_title = f"{video['video_title']} ({date_str})"
                 with st.expander(expander_title):
-                    if os.path.exists(video["video_path"]):
-                        st.video(video["video_path"])
+                    render_video_player(video)
                     st.write(video["script"])
 
             if len(videos) > 5:
@@ -184,8 +202,7 @@ with col_videos:
                         date_str = pd.to_datetime(video["created_date"]).strftime("%Y.%m.%d")
                         expander_title = f"{video['video_title']} ({date_str})"
                         with st.expander(expander_title):
-                            if os.path.exists(video["video_path"]):
-                                st.video(video["video_path"])
+                            render_video_player(video)
                             st.write(video["script"])
     st.markdown("</div>", unsafe_allow_html=True)
 

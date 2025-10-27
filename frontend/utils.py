@@ -188,6 +188,9 @@ def set_background(image_url: str, theme_mode: Optional[str] = None) -> None:
             transform: scale(1.15);
             background-color: var(--secondary-background-color);
         }}
+        [data-testid="stSidebarNav"] ul li a[href*="app_article"] {{
+            display: none !important;
+        }}
 
         .footer {{
             text-align: center;

@@ -14,6 +14,7 @@ if project_root not in sys.path:
     sys.path.append(project_root)
 
 from backend.database import init_db, get_article_and_video
+from backend.config import data_dir
 
 # 페이지 설정
 st.set_page_config(
@@ -107,15 +108,27 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+
+def resolve_video_path(raw_path: str | None) -> str | None:
+    """Return absolute path for stored video files (handles Fly.io /data mount)."""
+    if not raw_path:
+        return None
+    if os.path.isabs(raw_path):
+        return raw_path
+    sanitized = raw_path.lstrip("/\\")
+    return os.path.join(data_dir, sanitized)
+
 def main():
     st.markdown("<div class='main-header'><h1>헬스케어 5070 - 건강 영상 보기</h1></div>", unsafe_allow_html=True)
     
     # URL에서 ID 파라미터 가져오기
     query_params = st.query_params
     article_id = query_params.get("id")
+    if isinstance(article_id, list):
+        article_id = article_id[0]
 
     if not article_id:
-        st.info("URL에 기사 ID를 넣어주세요. 예시: `http://localhost:8501/?page=article&id=1`")
+        st.info("URL에 기사 ID를 넣어주세요. 예시: `/app_article?id=1`")
         return
 
     conn = init_db()
@@ -130,9 +143,12 @@ def main():
 
     # 본문 내용 표시
     st.markdown(f"<div class='article-container'>", unsafe_allow_html=True)
-    
     if video and video.get('video_path'):
-        st.video(video['video_path'])
+        resolved_path = resolve_video_path(video['video_path'])
+        if resolved_path and os.path.exists(resolved_path):
+            st.video(resolved_path)
+        else:
+            st.warning("영상 파일을 찾을 수 없습니다.")
 
     st.markdown(f"<h2 class='article-title'>{article['title']}</h2>", unsafe_allow_html=True)
     st.markdown(f"<div class='article-meta'>작성일: {article['crawled_date'][:10]} | 출처: 동아일보</div>", unsafe_allow_html=True)
@@ -165,5 +181,5 @@ if __name__ == '__main__':
     if st.query_params.get("page") == "article":
         main()
     else:
-        st.info("이 앱은 `app.py`에서 링크를 통해 접속해야 정상적으로 작동합니다.")
-        st.info("`http://localhost:8501/?page=article&id=` 뒤에 기사 ID를 입력해 주세요.")
+        st.info("이 앱은 `app.py` 또는 관리자 페이지에서 제공하는 링크를 통해 접속해야 정상적으로 작동합니다.")
+        st.info("예: `/app_article?id=1`")

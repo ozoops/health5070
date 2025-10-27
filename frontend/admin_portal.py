@@ -277,7 +277,10 @@ def show_admin_page():
                 col1, col2 = st.columns([4, 1])
                 with col1:
                     # '기사/영상 보기' 버튼 추가
-                    st.markdown(f'[<button style="background-color: #00a085; color: white; border: none; padding: 10px 20px; border-radius: 25px; cursor: pointer; font-family: \'Nanum Gothic\', sans-serif;"> 기사/영상 보기</button>](http://localhost:8501/app_article?id={video["article_id"]})', unsafe_allow_html=True)
+                    st.markdown(
+                        f'[<button style="background-color: #00a085; color: white; border: none; padding: 10px 20px; border-radius: 25px; cursor: pointer; font-family: \'Nanum Gothic\', sans-serif;"> 기사/영상 보기</button>](app_article?id={video["article_id"]})',
+                        unsafe_allow_html=True,
+                    )
                 with col2:
                     if st.button("삭제", key=f"delete_video_{video['id']}", type="primary"):
                         conn = init_db()
