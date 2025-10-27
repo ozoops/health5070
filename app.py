@@ -4,6 +4,7 @@ import streamlit as st
 import sys
 import os
 import pandas as pd
+from urllib.parse import quote
 
 # Add project root to the Python path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -22,6 +23,34 @@ theme_mode = render_theme_selector()
 set_background(
     "https://images.unsplash.com/photo-1576091160550-2173dba999ef?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
     theme_mode=theme_mode,
+)
+
+# Shared paths and styles
+CONTENT_PAGE_FILE = "pages/3_📰 콘텐츠 보기.py"
+CONTENT_PAGE_ROUTE = "/?page=" + quote("3_📰 콘텐츠 보기")
+
+st.markdown(
+    """
+    <style>
+        a[data-testid="stPageLink"],
+        .custom-button {
+            display: inline-block;
+            padding: 0.6rem 1.4rem;
+            border-radius: 999px;
+            background-color: var(--primary-color);
+            color: #ffffff !important;
+            text-decoration: none;
+            font-weight: 700;
+            transition: background-color 0.2s ease-in-out, transform 0.2s ease-in-out;
+        }
+        a[data-testid="stPageLink"]:hover,
+        .custom-button:hover {
+            background-color: var(--primary-color-hover);
+            transform: translateY(-2px);
+        }
+    </style>
+    """,
+    unsafe_allow_html=True,
 )
 
 if is_logged_in():
@@ -63,7 +92,13 @@ if is_logged_in():
                 </div>
             ''', unsafe_allow_html=True)
         
-        st.markdown('<a href="/3_📰_콘텐츠_보기" target="_self" class="custom-button">뉴스 더보기</a>', unsafe_allow_html=True)
+        if hasattr(st, "page_link"):
+            st.page_link(CONTENT_PAGE_FILE, label="뉴스 더보기")
+        else:
+            st.markdown(
+                f'<a href="{CONTENT_PAGE_ROUTE}" target="_self" class="custom-button">뉴스 더보기</a>',
+                unsafe_allow_html=True,
+            )
         st.markdown('</div>', unsafe_allow_html=True)
 
     if not videos.empty:
@@ -80,7 +115,13 @@ if is_logged_in():
                 </div>
             ''', unsafe_allow_html=True)
 
-        st.markdown('<a href="/3_📰_콘텐츠_보기" target="_self" class="custom-button">영상 더보기</a>', unsafe_allow_html=True)
+        if hasattr(st, "page_link"):
+            st.page_link(CONTENT_PAGE_FILE, label="영상 더보기")
+        else:
+            st.markdown(
+                f'<a href="{CONTENT_PAGE_ROUTE}" target="_self" class="custom-button">영상 더보기</a>',
+                unsafe_allow_html=True,
+            )
         st.markdown('</div>', unsafe_allow_html=True)
     
     st.markdown('<div class="footer">© 2025 헬스케어 5070 프로젝트팀. All rights reserved.</div>', unsafe_allow_html=True)
