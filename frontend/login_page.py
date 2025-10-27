@@ -11,25 +11,20 @@ from frontend.auth import login, is_logged_in, logout, signup
 from frontend.admin_portal import render_admin_portal
 from frontend.utils import set_background
 
-# Set background
-set_background("https://images.unsplash.com/photo-1553095066-5014bc7b7f2d?q=80&w=2071&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D")
+def render_login_page():
+    # Set background
+    set_background("https://images.unsplash.com/photo-1553095066-5014bc7b7f2d?q=80&w=2071&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D")
 
-if "show_admin_portal" not in st.session_state:
-    st.session_state.show_admin_portal = False
+    if "show_admin_portal" not in st.session_state:
+        st.session_state.show_admin_portal = False
 
-st.title("👤 로그인")
+    st.title("👤 로그인")
 
-# Email validation regex
-def is_valid_email(email):
-    return re.match(r"[^@]+@[^@]+\.[^@]+", email)
+    # Email validation regex
+    def is_valid_email(email):
+        return re.match(r"[^@]+@[^@]+\.[^@]+", email)
 
-if is_logged_in():
-    st.success(f"**{st.session_state['email']}**님, 환영합니다!")
-    st.write("다른 페이지로 이동하여 서비스를 이용할 수 있습니다.")
-    if st.button("로그아웃"):
-        logout()
-        st.rerun()
-else:
+
     with st.form("login_form"):
         email = st.text_input("이메일", placeholder="user@example.com")
         password = st.text_input("비밀번호", type="password")
@@ -72,15 +67,15 @@ else:
                     else:
                         st.error(message)
 
-st.markdown("---")
-with st.container():
-    st.markdown('<div style=\'text-align:right;font-size:0.9em;color:#bbb;\'>관리자 모드</div>', unsafe_allow_html=True)
-    if not st.session_state.show_admin_portal:
-        if st.button("관리자 모드 열기", key="btn_open_admin_portal"):
-            st.session_state.show_admin_portal = True
-            st.rerun()
-    else:
-        render_admin_portal()
-        if st.button("관리자 모드 닫기", key="btn_close_admin_portal"):
-            st.session_state.show_admin_portal = False
-            st.rerun()
+    st.markdown("---")
+    with st.container():
+        st.markdown('<div style=\'text-align:right;font-size:0.9em;color:#bbb;\'>관리자 모드</div>', unsafe_allow_html=True)
+        if not st.session_state.show_admin_portal:
+            if st.button("관리자 모드 열기", key="btn_open_admin_portal"):
+                st.session_state.show_admin_portal = True
+                st.rerun()
+        else:
+            render_admin_portal()
+            if st.button("관리자 모드 닫기", key="btn_close_admin_portal"):
+                st.session_state.show_admin_portal = False
+                st.rerun()

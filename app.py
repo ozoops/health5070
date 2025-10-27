@@ -10,6 +10,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from backend.database import init_db, get_stored_articles, get_produced_videos
 from frontend.utils import set_background
 from frontend.auth import is_logged_in, logout
+from frontend.login_page import render_login_page
 
 from backend.config import initialize_directories
 
@@ -19,20 +20,17 @@ st.set_page_config(page_title="헬스케어 5070", page_icon="🤗", layout="cen
 conn = init_db()
 set_background("https://images.unsplash.com/photo-1576091160550-2173dba999ef?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D")
 
-# --- SIDEBAR --- 
-with st.sidebar:
-    st.title("🤗 헬스케어 5070")
-    st.markdown("---")
-    if is_logged_in():
+if is_logged_in():
+    # --- SIDEBAR --- 
+    with st.sidebar:
+        st.title("🤗 헬스케어 5070")
+        st.markdown("---")
         st.success(f"{st.session_state['email']}님, 환영합니다!")
         if st.button("로그아웃"):
             logout()
             st.rerun()
-    else:
-        st.info("로그인 또는 회원가입을 해주세요.")
 
-# --- MAIN PAGE CONTENT ---
-if is_logged_in():
+    # --- MAIN PAGE CONTENT ---
     # --- Logged-in user's homepage ---
     st.markdown('<div class="main-container">', unsafe_allow_html=True)
 
@@ -85,13 +83,4 @@ if is_logged_in():
     st.markdown('</div>', unsafe_allow_html=True)
 
 else:
-    # --- Public homepage for non-logged-in users ---
-    st.markdown('<div class="main-container">', unsafe_allow_html=True)
-    st.markdown("""
-        <div class="login-header">
-            <h1>🤗 헬스케어 5070에 오신 것을 환영합니다</h1>
-            <p>AI 건강 비서와 함께하는 스마트한 건강 관리</p>
-            <p style="margin-top: 2rem;">왼쪽 사이드바에서 <strong>로그인을</strong> 선택하여 시작하세요.</p>
-        </div>
-    """, unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+    render_login_page()
