@@ -114,20 +114,20 @@ with col_news:
             st.success(f"'{search_keyword}' 관련 뉴스 결과: {len(generated_articles)}건")
             for _, article in generated_articles.iterrows():
                 date_str = pd.to_datetime(article["generated_created_date"]).strftime("%Y.%m.%d")
-                st.page_link("pages/4_📰 상세 보기.py", label=f"{article['generated_title']} ({date_str})", params={"id": article['article_id']})
+                st.markdown(f"[{article['generated_title']} ({date_str})](?id={article['article_id']})")
     else:
         if generated_articles.empty:
             st.info("생성된 AI 기사가 아직 없습니다.")
         else:
             for _, article in generated_articles.head(5).iterrows():
                 date_str = pd.to_datetime(article["generated_created_date"]).strftime("%Y.%m.%d")
-                st.page_link("pages/4_📰 상세 보기.py", label=f"{article['generated_title']} ({date_str})", params={"id": article['article_id']})
+                st.markdown(f"[{article['generated_title']} ({date_str})](?id={article['article_id']})")
 
             if len(generated_articles) > 5:
                 with st.expander("뉴스 더보기"):
                     for _, article in generated_articles.iloc[5:].iterrows():
                         date_str = pd.to_datetime(article["generated_created_date"]).strftime("%Y.%m.%d")
-                        st.page_link("pages/4_📰 상세 보기.py", label=f"{article['generated_title']} ({date_str})", params={"id": article['article_id']})
+                        st.markdown(f"[{article['generated_title']} ({date_str})](?id={article['article_id']})")
     st.markdown("</div>", unsafe_allow_html=True)
 
 with col_videos:
@@ -148,20 +148,20 @@ with col_videos:
             st.success(f"'{search_keyword}' 관련 영상 결과: {len(videos)}건")
             for _, video in videos.iterrows():
                 date_str = pd.to_datetime(video["created_date"]).strftime("%Y.%m.%d")
-                st.page_link("pages/4_📰 상세 보기.py", label=f"{video['video_title']} ({date_str})", params={"id": video['article_id']})
+                st.markdown(f"[{video['video_title']} ({date_str})](?id={video['article_id']})")
     else:
         if videos.empty:
             st.info("제작이 완료된 영상이 아직 없습니다.")
         else:
             for _, video in videos.head(5).iterrows():
                 date_str = pd.to_datetime(video["created_date"]).strftime("%Y.%m.%d")
-                st.page_link("pages/4_📰 상세 보기.py", label=f"{video['video_title']} ({date_str})", params={"id": video['article_id']})
+                st.markdown(f"[{video['video_title']} ({date_str})](?id={video['article_id']})")
 
             if len(videos) > 5:
                 with st.expander("영상 더보기"):
                     for _, video in videos.iloc[5:].iterrows():
                         date_str = pd.to_datetime(video["created_date"]).strftime("%Y.%m.%d")
-                        st.page_link("pages/4_📰 상세 보기.py", label=f"{video['video_title']} ({date_str})", params={"id": video['article_id']})
+                        st.markdown(f"[{video['video_title']} ({date_str})](?id={video['article_id']})")
     st.markdown("</div>", unsafe_allow_html=True)
 
 st.markdown(
