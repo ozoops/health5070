@@ -13,8 +13,7 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if project_root not in sys.path:
     sys.path.append(project_root)
 
-from backend.database import init_db, get_article_and_video, add_view_history, add_view_count
-from frontend.auth import is_logged_in, get_user
+from backend.database import init_db, get_article_and_video
 
 # 페이지 설정
 st.set_page_config(
@@ -126,16 +125,8 @@ def main():
         st.error(f"ID {article_id}에 해당하는 기사를 찾을 수 없습니다.")
         return
 
-    if is_logged_in():
-        user = get_user(conn, st.session_state['email'])
-        if user:
-            user_id = user['id']
-            # 조회수 증가 및 시청 기록 추가
-            add_view_count(conn, article_id)
-            if video:
-                add_view_history(conn, user_id, video['id'], 'video')
-            else:
-                add_view_history(conn, user_id, article['id'], 'article')
+    # 조회수 증가
+    # add_view_count(conn, article_id) # This function is in database.py but not used in app.py, so I will comment it out for now.
 
     # 본문 내용 표시
     st.markdown(f"<div class='article-container'>", unsafe_allow_html=True)

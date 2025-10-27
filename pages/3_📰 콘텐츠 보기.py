@@ -34,9 +34,11 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+st.markdown('<div class="content-section">', unsafe_allow_html=True)
 st.subheader("🔍 콘텐츠 검색")
 search_keyword = st.text_input("키워드를 입력하세요.", "").strip()
 search_type = st.radio("검색 대상", ("전체", "뉴스", "영상"), horizontal=True)
+st.markdown('</div>', unsafe_allow_html=True)
 
 generated_articles_all = get_all_generated_content(conn)
 if not isinstance(generated_articles_all, pd.DataFrame):
