@@ -2,14 +2,36 @@ import streamlit as st
 import sys
 import os
 import re
+from urllib.parse import quote
 
 # Add project root to the Python path
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(project_root)
 
 from frontend.auth import login, is_logged_in, logout, signup
-from frontend.admin_portal import render_admin_portal
 from frontend.utils import set_background, get_theme_mode
+
+
+ADMIN_PAGE_FILE = "pages/9_🔒_관리자.py"
+ADMIN_PAGE_ROUTE = "?page=" + quote("9_🔒_관리자")
+
+
+def render_admin_access_button() -> None:
+    """Provide a navigation control that opens the admin portal page."""
+    if hasattr(st, "page_link"):
+        st.page_link(ADMIN_PAGE_FILE, label="관리자 모드 열기", icon="🔒")
+        return
+
+    if hasattr(st, "link_button"):
+        st.link_button("관리자 모드 열기", ADMIN_PAGE_ROUTE, type="primary")
+        return
+
+    if st.button("관리자 모드 열기", key="btn_open_admin_portal"):
+        try:
+            st.experimental_set_query_params(page="9_🔒_관리자")
+        except TypeError:
+            st.experimental_set_query_params()
+        st.experimental_rerun()
 
 def render_login_page():
     # Set background
@@ -17,9 +39,6 @@ def render_login_page():
         "https://images.unsplash.com/photo-1553095066-5014bc7b7f2d?q=80&w=2071&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
         theme_mode=get_theme_mode(),
     )
-
-    if "show_admin_portal" not in st.session_state:
-        st.session_state.show_admin_portal = False
 
     st.title("👤 로그인")
 
@@ -73,12 +92,4 @@ def render_login_page():
     st.markdown("---")
     with st.container():
         st.markdown('<div style=\'text-align:right;font-size:0.9em;color:#bbb;\'>관리자 모드</div>', unsafe_allow_html=True)
-        if not st.session_state.show_admin_portal:
-            if st.button("관리자 모드 열기", key="btn_open_admin_portal"):
-                st.session_state.show_admin_portal = True
-                st.rerun()
-        else:
-            render_admin_portal()
-            if st.button("관리자 모드 닫기", key="btn_close_admin_portal"):
-                st.session_state.show_admin_portal = False
-                st.rerun()
+        render_admin_access_button()
