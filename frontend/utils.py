@@ -50,18 +50,31 @@ def set_background(image_url):
         }}
 
         /* Light theme styles */
-        .light-theme {
+        :root {{
             --container-bg-color: rgba(240, 242, 246, 0.8);
             --container-border-color: var(--gray-30);
             --text-shadow: none;
-        }
+        }}
+
+        .hero-section, .content-section, .login-header {{
+            background-color: var(--container-bg-color) !important;
+            border-color: var(--container-border-color);
+        }}
+        
+        .hero-section h1, .login-header h1, .content-section h2,
+        .hero-section p, .login-header p, .content-list-item, .item-date, .footer {{
+            text-shadow: var(--text-shadow);
+        }}
+
 
         /* Dark theme styles */
-        .dark-theme {
-            --container-bg-color: rgba(0, 0, 0, 0.6);
-            --container-border-color: var(--gray-80);
-            --text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
-        }
+        @media (prefers-color-scheme: dark) {{
+            :root {{
+                --container-bg-color: rgba(0, 0, 0, 0.6);
+                --container-border-color: var(--gray-80);
+                --text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+            }}
+        }}
 
         .hero-section {{
             text-align: center;

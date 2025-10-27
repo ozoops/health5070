@@ -17,22 +17,6 @@ from backend.config import initialize_directories
 # --- DIRECTORY AND DB SETUP ---
 initialize_directories()
 st.set_page_config(page_title="헬스케어 5070", page_icon="🤗", layout="centered", initial_sidebar_state="expanded")
-
-# --- THEME TOGGLE --- #
-theme_js = """
-<script>
-    function applyTheme(theme) {
-        const body = parent.document.body;
-        body.classList.remove('light-theme', 'dark-theme');
-        body.classList.add(theme);
-    }
-
-    const theme = '%s';
-    applyTheme(theme);
-</script>
-""" % ('light-theme' if st.session_state.get('theme', '다크 모드') == '라이트 모드' else 'dark-theme')
-
-st.markdown(theme_js, unsafe_allow_html=True)
 conn = init_db()
 set_background("https://images.unsplash.com/photo-1576091160550-2173dba999ef?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D")
 
@@ -40,17 +24,6 @@ if is_logged_in():
     # --- SIDEBAR --- 
     with st.sidebar:
         st.title("🤗 헬스케어 5070")
-        st.markdown("---")
-
-        if 'theme' not in st.session_state:
-            st.session_state.theme = "다크 모드"
-
-        st.session_state.theme = st.radio(
-            "화면 모드 선택",
-            ("라이트 모드", "다크 모드"),
-            index=1 if st.session_state.theme == "다크 모드" else 0
-        )
-
         st.markdown("---")
         st.success(f"{st.session_state['email']}님, 환영합니다!")
         if st.button("로그아웃"):

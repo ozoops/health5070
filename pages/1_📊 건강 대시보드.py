@@ -14,50 +14,25 @@ from frontend.utils import set_background
 # Set background image (유지)
 set_background("https://images.unsplash.com/photo-1576091160550-2173dba999ef?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D")
 
-def nanum_gothic_theme(theme='dark'):
-    base_font = "Nanum Gothic"
-    base_color = "#FFFFFF" if theme == 'dark' else "#000000"
-    secondary_color = "#D3D3D3" if theme == 'dark' else "#555555"
-    background_color = "transparent" # or a specific color like '#0E1117' for dark
-
+def nanum_gothic_theme():
     return {
         "config": {
-            "title": {"font": base_font, "anchor": "middle", "color": base_color},
-            "axis": {
-                "labelFont": base_font,
-                "titleFont": base_font,
-                "labelColor": secondary_color,
-                "titleColor": base_color,
-                "gridColor": "#444444" if theme == 'dark' else "#DDDDDD",
-                "domainColor": base_color,
-                "tickColor": base_color
-            },
-            "header": {
-                "labelFont": base_font,
-                "titleFont": base_font,
-                "labelColor": base_color,
-                "titleColor": base_color
-            },
-            "legend": {
-                "labelFont": base_font,
-                "titleFont": base_font,
-                "labelColor": secondary_color,
-                "titleColor": base_color
-            },
+            "title": {"font": "Nanum Gothic", "anchor": "middle"},
+            "axis": {"labelFont": "Nanum Gothic", "titleFont": "Nanum Gothic"},
+            "header": {"labelFont": "Nanum Gothic", "titleFont": "Nanum Gothic"},
+            "legend": {"labelFont": "Nanum Gothic", "titleFont": "Nanum Gothic"},
             "range": {
                 "category": {"scheme": "pastel1"},
                 "diverging": {"scheme": "redblue"},
                 "heatmap": {"scheme": "viridis"},
                 "ramp": {"scheme": "blues"},
             },
-            "view": {"stroke": "transparent", "fill": background_color},
-            "background": background_color
+            "view": {"stroke": "transparent"},
         }
     }
 
-current_theme = 'light' if st.session_state.get('theme', '다크 모드') == '라이트 모드' else 'dark'
-alt.themes.register("nanum_gothic_dynamic", lambda: nanum_gothic_theme(current_theme))
-alt.themes.enable("nanum_gothic_dynamic")
+alt.themes.register("nanum_gothic", nanum_gothic_theme)
+alt.themes.enable("nanum_gothic")
 
 # Load data from JSON file (유지)
 data_file_path = os.path.join(project_root, "data", "dashboard_data.json")
@@ -90,9 +65,7 @@ def create_dashboard():
     # --- Key Metrics (유지) ---
     st.header("주요 건강 현황 (50-70대)")
 
-    def create_gauge_chart(value, title, subtitle, color, current_theme='dark'):
-        base_color = "#FFFFFF" if current_theme == 'dark' else "#000000"
-        secondary_color = "#D3D3D3" if current_theme == 'dark' else "#555555"
+    def create_gauge_chart(value, title, subtitle, color):
         # ... (게이지 차트 코드 유지) ...
         subtitle_display = subtitle.replace(" / ", "\n")
 
@@ -129,7 +102,7 @@ def create_dashboard():
             baseline='middle',
             fontSize=font_size_value,
             fontWeight='bold',
-            color=base_color, 
+            color='white', 
             dy=-5 
         ).encode(
             text='text_value:N'
@@ -140,7 +113,7 @@ def create_dashboard():
             baseline='middle', 
             fontSize=font_size_title,
             fontWeight='bold',
-            color=base_color, 
+            color='white', 
             dy=45 
         ).encode(
             text='value:N'
@@ -150,7 +123,7 @@ def create_dashboard():
             align='center',
             baseline='middle', 
             fontSize=font_size_subtitle,
-            color=secondary_color, 
+            color='#D3D3D3', 
             dy=75,
             lineHeight=15
         ).encode(
@@ -175,7 +148,6 @@ def create_dashboard():
                     chart_data["title"],
                     chart_data["subtitle"],
                     chart_data["color"],
-                    current_theme=current_theme
                 )
                 st.altair_chart(chart, use_container_width=False)
     else:
