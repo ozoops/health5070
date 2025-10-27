@@ -52,6 +52,33 @@ st.markdown(
 CONTENT_PAGE_FILE = "pages/3_📰 콘텐츠 보기.py"
 CONTENT_PAGE_ROUTE = "?page=" + quote("3_📰 콘텐츠 보기")
 
+
+def _navigate_to_content_page() -> None:
+    """Navigate to the 콘텐츠 보기 page across Streamlit versions."""
+    if hasattr(st, "switch_page"):
+        st.switch_page(CONTENT_PAGE_FILE)
+        return
+
+    try:
+        st.experimental_set_query_params(page="3_📰 콘텐츠 보기")
+    except TypeError:
+        st.experimental_set_query_params()
+    st.experimental_rerun()
+
+
+def _render_content_button(label: str, key: str) -> None:
+    """Render a navigation control that works on legacy Streamlit releases."""
+    if hasattr(st, "page_link"):
+        st.page_link(CONTENT_PAGE_FILE, label=label)
+        return
+
+    if hasattr(st, "link_button"):
+        st.link_button(label, CONTENT_PAGE_ROUTE, type="primary")
+        return
+
+    if st.button(label, key=key):
+        _navigate_to_content_page()
+
 if is_logged_in():
     # --- SIDEBAR --- 
     with st.sidebar:
@@ -91,13 +118,7 @@ if is_logged_in():
                 </div>
             ''', unsafe_allow_html=True)
         
-        if hasattr(st, "page_link"):
-            st.page_link(CONTENT_PAGE_FILE, label="뉴스 더보기")
-        else:
-            st.markdown(
-                f'<a href="{CONTENT_PAGE_ROUTE}" target="_self" class="custom-button">뉴스 더보기</a>',
-                unsafe_allow_html=True,
-            )
+        _render_content_button("뉴스 더보기", key="news_more")
         st.markdown('</div>', unsafe_allow_html=True)
 
     if not videos.empty:
@@ -114,13 +135,7 @@ if is_logged_in():
                 </div>
             ''', unsafe_allow_html=True)
 
-        if hasattr(st, "page_link"):
-            st.page_link(CONTENT_PAGE_FILE, label="영상 더보기")
-        else:
-            st.markdown(
-                f'<a href="{CONTENT_PAGE_ROUTE}" target="_self" class="custom-button">영상 더보기</a>',
-                unsafe_allow_html=True,
-            )
+        _render_content_button("영상 더보기", key="video_more")
         st.markdown('</div>', unsafe_allow_html=True)
     
     st.markdown('<div class="footer">© 2025 헬스케어 5070 프로젝트팀. All rights reserved.</div>', unsafe_allow_html=True)
