@@ -11,7 +11,7 @@ from frontend.utils import set_background
 from frontend.auth import is_logged_in
 
 st.set_page_config(page_title="시청 기록", layout="wide")
-set_background("https://images.unsplash.com/photo-1489599849927-2ee91e4543e3?q=80&w=2073&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D")
+set_background("https://images.unsplash.com/photo-1522869635100-9f4c5e86aa37?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D")
 
 st.title("🎬 시청 기록")
 
