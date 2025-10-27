@@ -77,6 +77,11 @@ search_active = bool(search_keyword)
 show_news_column = search_type != "영상"
 show_video_column = search_type != "뉴스"
 
+if "show_all_articles" not in st.session_state:
+    st.session_state["show_all_articles"] = False
+if "show_all_videos" not in st.session_state:
+    st.session_state["show_all_videos"] = False
+
 if search_active:
     keyword = search_keyword.lower()
 
@@ -146,7 +151,13 @@ with col_news:
         if generated_articles.empty:
             st.info("생성된 AI 기사가 아직 없습니다.")
         else:
-            for _, article in generated_articles.head(5).iterrows():
+            show_all_articles = st.session_state.get("show_all_articles", False)
+            if len(generated_articles) <= 5 and show_all_articles:
+                show_all_articles = False
+                st.session_state["show_all_articles"] = False
+
+            articles_to_display = generated_articles if show_all_articles else generated_articles.head(5)
+            for _, article in articles_to_display.iterrows():
                 date_str = pd.to_datetime(article["generated_created_date"]).strftime("%Y.%m.%d")
                 expander_title = f"{article['generated_title']} ({date_str})"
                 with st.expander(expander_title):
@@ -154,13 +165,10 @@ with col_news:
                     st.markdown(f"<a href='{article['original_url']}' target='_blank'>원문보기</a>", unsafe_allow_html=True)
 
             if len(generated_articles) > 5:
-                with st.expander("뉴스 더보기"):
-                    for _, article in generated_articles.iloc[5:].iterrows():
-                        date_str = pd.to_datetime(article["generated_created_date"]).strftime("%Y.%m.%d")
-                        expander_title = f"{article['generated_title']} ({date_str})"
-                        with st.expander(expander_title):
-                            st.write(article['generated_content'])
-                            st.markdown(f"<a href='{article['original_url']}' target='_blank'>원문보기</a>", unsafe_allow_html=True)
+                button_label = "뉴스 더보기" if not show_all_articles else "뉴스 접기"
+                if st.button(button_label, key="toggle_articles_button"):
+                    st.session_state["show_all_articles"] = not show_all_articles
+                    st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
 with col_videos:
@@ -189,7 +197,13 @@ with col_videos:
         if videos.empty:
             st.info("제작이 완료된 영상이 아직 없습니다.")
         else:
-            for _, video in videos.head(5).iterrows():
+            show_all_videos = st.session_state.get("show_all_videos", False)
+            if len(videos) <= 5 and show_all_videos:
+                show_all_videos = False
+                st.session_state["show_all_videos"] = False
+
+            videos_to_display = videos if show_all_videos else videos.head(5)
+            for _, video in videos_to_display.iterrows():
                 date_str = pd.to_datetime(video["created_date"]).strftime("%Y.%m.%d")
                 expander_title = f"{video['video_title']} ({date_str})"
                 with st.expander(expander_title):
@@ -197,13 +211,10 @@ with col_videos:
                     st.write(video["script"])
 
             if len(videos) > 5:
-                with st.expander("영상 더보기"):
-                    for _, video in videos.iloc[5:].iterrows():
-                        date_str = pd.to_datetime(video["created_date"]).strftime("%Y.%m.%d")
-                        expander_title = f"{video['video_title']} ({date_str})"
-                        with st.expander(expander_title):
-                            render_video_player(video)
-                            st.write(video["script"])
+                button_label = "영상 더보기" if not show_all_videos else "영상 접기"
+                if st.button(button_label, key="toggle_videos_button"):
+                    st.session_state["show_all_videos"] = not show_all_videos
+                    st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
 st.markdown(
