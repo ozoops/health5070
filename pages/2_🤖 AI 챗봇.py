@@ -15,13 +15,17 @@ project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(project_root)
 
 from backend.database import init_db, get_user, save_chat_message, get_chat_history
-from frontend.utils import set_background
+from frontend.utils import set_background, render_theme_selector
 from frontend.auth import is_logged_in
 from backend.article_generator import ArticleGenerator # Import our new Agent
 
 # --- PAGE SETUP AND AUTH CHECK ---
 st.set_page_config(page_title="AI 건강 비서", layout="centered")
-set_background("https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D")
+theme_mode = render_theme_selector()
+set_background(
+    "https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    theme_mode=theme_mode,
+)
 
 if not is_logged_in():
     st.warning("🤖 AI 상담은 로그인 후 이용 가능합니다.")

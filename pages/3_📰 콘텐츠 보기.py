@@ -10,10 +10,14 @@ sys.path.append(project_root)
 
 from backend.database import init_db, get_all_generated_content, get_produced_videos
 from frontend.auth import is_logged_in
-from frontend.utils import set_background
+from frontend.utils import set_background, render_theme_selector
 
 st.set_page_config(page_title="콘텐츠 허브", layout="wide")
-set_background("https://images.unsplash.com/photo-1457369804613-52c61a468e7d?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D")
+theme_mode = render_theme_selector()
+set_background(
+    "https://images.unsplash.com/photo-1457369804613-52c61a468e7d?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    theme_mode=theme_mode,
+)
 
 conn = init_db()
 

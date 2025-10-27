@@ -7,11 +7,15 @@ import os
 
 sys.path.append(os.path.dirname(os.path.abspath(os.path.join(__file__, '..', '..'))))
 from backend.database import get_view_history, init_db, get_user, toggle_favorite, delete_history_item, delete_all_history
-from frontend.utils import set_background
+from frontend.utils import set_background, render_theme_selector
 from frontend.auth import is_logged_in
 
 st.set_page_config(page_title="시청 기록", layout="wide")
-set_background("https://images.unsplash.com/photo-1522869635100-9f4c5e86aa37?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D")
+theme_mode = render_theme_selector()
+set_background(
+    "https://images.unsplash.com/photo-1522869635100-9f4c5e86aa37?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    theme_mode=theme_mode,
+)
 
 st.title("🎬 시청 기록")
 

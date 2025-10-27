@@ -8,7 +8,7 @@ import pandas as pd
 # Add project root to the Python path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from backend.database import init_db, get_stored_articles, get_produced_videos
-from frontend.utils import set_background
+from frontend.utils import set_background, render_theme_selector
 from frontend.auth import is_logged_in, logout
 from frontend.login_page import render_login_page
 
@@ -18,7 +18,11 @@ from backend.config import initialize_directories
 initialize_directories()
 st.set_page_config(page_title="헬스케어 5070", page_icon="🤗", layout="centered", initial_sidebar_state="expanded")
 conn = init_db()
-set_background("https://images.unsplash.com/photo-1576091160550-2173dba999ef?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D")
+theme_mode = render_theme_selector()
+set_background(
+    "https://images.unsplash.com/photo-1576091160550-2173dba999ef?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    theme_mode=theme_mode,
+)
 
 if is_logged_in():
     # --- SIDEBAR --- 

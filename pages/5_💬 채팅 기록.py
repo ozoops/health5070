@@ -7,11 +7,15 @@ import pytz # Import pytz for timezone handling
 
 sys.path.append(os.path.dirname(os.path.abspath(os.path.join(__file__, '..', '..'))))
 from backend.database import init_db, get_user, get_chat_history, delete_chat_history_item, delete_all_chat_history
-from frontend.utils import set_background
+from frontend.utils import set_background, render_theme_selector
 from frontend.auth import is_logged_in
 
 st.set_page_config(page_title="AI 상담 기록", layout="wide")
-set_background("https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D")
+theme_mode = render_theme_selector()
+set_background(
+    "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    theme_mode=theme_mode,
+)
 
 st.title("📜 AI 상담 기록")
 
