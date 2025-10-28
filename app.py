@@ -13,7 +13,7 @@ from frontend.utils import set_background, render_theme_selector
 from frontend.auth import is_logged_in, logout
 from frontend.login_page import render_login_page
 
-from backend.config import initialize_directories
+from backend.config import initialize_directories, ADMIN_EMAIL
 
 # --- DIRECTORY AND DB SETUP ---
 initialize_directories()
@@ -88,6 +88,15 @@ if is_logged_in():
         if st.button("로그아웃"):
             logout()
             st.rerun()
+
+        st.markdown("---")
+        contact_subject = quote("헬스케어 5070 문의")
+        mailto_link = f"mailto:{ADMIN_EMAIL}?subject={contact_subject}"
+        st.markdown(
+            f"<a class='custom-button sidebar-contact-button' href='{mailto_link}'>📮 Contact us</a>",
+            unsafe_allow_html=True,
+        )
+        st.caption("서비스 개선 제안을 이메일로 보내주세요.")
 
     # --- MAIN PAGE CONTENT ---
     # --- Logged-in user's homepage ---

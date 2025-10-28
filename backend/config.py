@@ -21,5 +21,8 @@ def initialize_directories():
     os.makedirs(FAISS_INDEX_DIR, exist_ok=True)
     os.makedirs(GENERATED_VIDEOS_DIR, exist_ok=True)
 
+# 관리자 문의 메일 주소 (환경 변수에서 우선적으로 가져옵니다.)
+ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "ozoops5911@gmail.com")
+
 # 이 함수는 애플리케이션의 메인 시작점에서 한 번 호출되어야 합니다.
 # 예: app.py 또는 main streamlit 파일

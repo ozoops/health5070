@@ -212,6 +212,13 @@ def set_background(image_url: str, theme_mode: Optional[str] = None) -> None:
             color: var(--muted-text-color);
         }}
 
+        .sidebar-contact-button {{
+            display: block;
+            width: 100%;
+            text-align: center;
+            margin-top: 0.5rem;
+        }}
+
         .stButton button {{
             font-weight: 700;
             border-radius: 8px;

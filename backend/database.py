@@ -356,3 +356,88 @@ def get_all_generated_content(conn):
         ORDER BY ga.created_date DESC
     """
     return pd.read_sql_query(query, conn)
+
+
+def get_user_signup_summary(conn):
+    """Return aggregate counts for user signups."""
+    query = """
+        SELECT
+            COUNT(*) AS total_users,
+            SUM(CASE WHEN DATE(created_at) >= DATE('now', '-7 day') THEN 1 ELSE 0 END) AS new_last_7_days,
+            SUM(CASE WHEN strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now') THEN 1 ELSE 0 END) AS new_this_month
+        FROM users
+    """
+    return pd.read_sql_query(query, conn).iloc[0].to_dict()
+
+
+def get_user_signup_trend(conn, days: int = 30):
+    """Return daily signup counts for the past `days` days."""
+    query = """
+        SELECT
+            DATE(created_at) AS signup_date,
+            COUNT(*) AS signup_count
+        FROM users
+        WHERE DATE(created_at) >= DATE('now', ?)
+        GROUP BY DATE(created_at)
+        ORDER BY DATE(created_at)
+    """
+    return pd.read_sql_query(query, conn, params=[f'-{int(days)} day'])
+
+
+def get_view_history_summary(conn):
+    """Return aggregate view history grouped by content type."""
+    query = """
+        SELECT
+            content_type,
+            COUNT(*) AS view_count
+        FROM view_history
+        GROUP BY content_type
+    """
+    return pd.read_sql_query(query, conn)
+
+
+def get_top_viewed_content(conn, limit: int = 10):
+    """
+    Return the most viewed items from view_history with their titles.
+    """
+    article_query = """
+        SELECT vh.content_id AS id,
+               'article' AS content_type,
+               a.title AS title,
+               COUNT(*) AS view_count
+        FROM view_history vh
+        JOIN articles a ON vh.content_id = a.id
+        WHERE vh.content_type = 'article'
+        GROUP BY vh.content_id
+    """
+    video_query = """
+        SELECT vh.content_id AS id,
+               'video' AS content_type,
+               IFNULL(v.video_title, a.title) AS title,
+               COUNT(*) AS view_count
+        FROM view_history vh
+        JOIN videos v ON vh.content_id = v.id
+        LEFT JOIN articles a ON v.article_id = a.id
+        WHERE vh.content_type = 'video'
+        GROUP BY vh.content_id
+    """
+    union_query = f"""
+        SELECT * FROM (
+            {article_query}
+            UNION ALL
+            {video_query}
+        )
+        ORDER BY view_count DESC
+        LIMIT ?
+    """
+    return pd.read_sql_query(union_query, conn, params=[int(limit)])
+
+
+def get_chat_activity_summary(conn):
+    """Return counts of chat messages grouped by role."""
+    query = """
+        SELECT role, COUNT(*) AS message_count
+        FROM chat_history
+        GROUP BY role
+    """
+    return pd.read_sql_query(query, conn)

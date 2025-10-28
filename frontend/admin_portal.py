@@ -12,7 +12,20 @@ import sqlite3
 # --- 백엔드 모듈 import를 위한 경로 설정 ---
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from backend.database import init_db, get_produced_videos, get_crawl_stats, get_stored_articles, get_generated_article, save_generated_article, delete_video
+from backend.database import (
+    init_db,
+    get_produced_videos,
+    get_crawl_stats,
+    get_stored_articles,
+    get_generated_article,
+    save_generated_article,
+    delete_video,
+    get_user_signup_summary,
+    get_user_signup_trend,
+    get_view_history_summary,
+    get_top_viewed_content,
+    get_chat_activity_summary,
+)
 from backend.crawler import DongACrawler
 from backend.video import VideoProducer, display_video_card
 from backend.article_generator import ArticleGenerator
@@ -96,7 +109,13 @@ def show_admin_page():
     </div>
     ''', unsafe_allow_html=True)
     
-    tab1, tab2, tab3, tab4 = st.tabs([" 기사 수집 및 영상 제작", " 영상 관리", " 통계", " 동영상 업로드"])
+    tab1, tab2, tab3, tab4, tab5 = st.tabs([
+        " 기사 수집 및 영상 제작",
+        " 영상 관리",
+        " 통계",
+        " 동영상 업로드",
+        " 회원 관리",
+    ])
     
     with tab1:
         if st.session_state.get('video_to_produce'):
@@ -449,6 +468,67 @@ def show_admin_page():
 
             else:
                 st.warning("동영상 파일과 제목을 모두 입력해주세요.")
+
+    with tab5:
+        st.markdown("### 👥 회원 관리 대시보드")
+
+        conn = init_db()
+        summary = get_user_signup_summary(conn)
+
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("총 가입자 수", f"{summary.get('total_users', 0):,}명")
+        with col2:
+            st.metric("최근 7일 신규 가입", f"{summary.get('new_last_7_days', 0):,}명")
+        with col3:
+            st.metric("이번 달 신규 가입", f"{summary.get('new_this_month', 0):,}명")
+
+        st.markdown("---")
+        st.subheader("가입 추이 (최근 30일)")
+        signup_trend = get_user_signup_trend(conn, days=30)
+        if not signup_trend.empty:
+            signup_trend['signup_date'] = pd.to_datetime(signup_trend['signup_date'])
+            signup_trend = signup_trend.set_index('signup_date')
+            st.line_chart(signup_trend['signup_count'])
+        else:
+            st.info("최근 30일 동안의 가입 데이터가 없습니다.")
+
+        st.markdown("---")
+        st.subheader("페이지 유형별 이용 현황")
+        view_summary = get_view_history_summary(conn)
+        if not view_summary.empty:
+            view_summary = view_summary.set_index('content_type')
+            st.bar_chart(view_summary['view_count'])
+            st.caption("콘텐츠 유형별(기사/영상) 이용 횟수를 집계한 값입니다.")
+        else:
+            st.info("아직 수집된 이용 기록이 없습니다.")
+
+        st.markdown("---")
+        st.subheader("인기 콘텐츠 TOP 10")
+        top_content = get_top_viewed_content(conn, limit=10)
+        if not top_content.empty:
+            st.dataframe(
+                top_content.rename(columns={
+                    'content_type': '콘텐츠 구분',
+                    'title': '제목',
+                    'view_count': '조회수'
+                }),
+                use_container_width=True,
+            )
+        else:
+            st.info("조회 이력이 없어 인기 콘텐츠를 계산할 수 없습니다.")
+
+        st.markdown("---")
+        st.subheader("AI 챗봇 이용 현황")
+        chat_summary = get_chat_activity_summary(conn)
+        if not chat_summary.empty:
+            chat_summary = chat_summary.set_index('role')
+            st.bar_chart(chat_summary['message_count'])
+            st.caption("사용자/시스템 메시지 비율을 통해 챗봇 활용도를 파악할 수 있습니다.")
+        else:
+            st.info("챗봇 사용 기록이 아직 없습니다.")
+
+        conn.close()
 
 
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'admin0326')
