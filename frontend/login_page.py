@@ -12,8 +12,8 @@ from frontend.auth import login, is_logged_in, logout, signup
 from frontend.utils import set_background, get_theme_mode
 
 
-ADMIN_PAGE_FILE = "pages/9_🔒_관리자.py"
-ADMIN_PAGE_ROUTE = "?page=" + quote("9_🔒_관리자")
+ADMIN_PAGE_FILE = "pages/_9_🔒_관리자.py"
+ADMIN_PAGE_ROUTE = "?page=" + quote("_9_🔒_관리자")
 
 
 def render_admin_access_button() -> None:
@@ -28,7 +28,7 @@ def render_admin_access_button() -> None:
 
     if st.button("관리자 모드 열기", key="btn_open_admin_portal"):
         try:
-            st.experimental_set_query_params(page="9_🔒_관리자")
+            st.experimental_set_query_params(page="_9_🔒_관리자")
         except TypeError:
             st.experimental_set_query_params()
         st.experimental_rerun()

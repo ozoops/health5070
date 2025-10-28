@@ -194,6 +194,15 @@ def set_background(image_url: str, theme_mode: Optional[str] = None) -> None:
         [data-testid="stSidebarNav"] ul li a[href*="9_%F0%9F%94%92"] {{
             display: none !important;
         }}
+        [data-testid="stSidebarNav"] ul li a[href*="9_🔒_관리자"] {{
+            display: none !important;
+        }}
+        [data-testid="stSidebarNav"] ul li a[href*="_9_%F0%9F%94%92"] {{
+            display: none !important;
+        }}
+        [data-testid="stSidebarNav"] ul li a[href*="_9_🔒_관리자"] {{
+            display: none !important;
+        }}
 
         .footer {{
             text-align: center;
