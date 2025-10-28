@@ -19,7 +19,29 @@ from backend.config import initialize_directories, ADMIN_EMAIL
 initialize_directories()
 st.set_page_config(page_title="헬스케어 5070", page_icon="🤗", layout="centered", initial_sidebar_state="expanded")
 conn = init_db()
-theme_mode = render_theme_selector()
+logged_in = is_logged_in()
+
+welcome_container = None
+if logged_in:
+    welcome_container = st.sidebar.container()
+    email = st.session_state["email"]
+    welcome_container.markdown(
+        f"""
+        <div class="sidebar-welcome-card">
+            <a href="mailto:{email}" class="sidebar-welcome-email">{email}</a>님,<br/>
+            환영합니다!
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    if welcome_container.button("로그아웃", use_container_width=True):
+        logout()
+        st.rerun()
+
+
+theme_selector_container = st.sidebar.container()
+theme_mode = render_theme_selector(container=theme_selector_container)
+
 set_background(
     "https://images.unsplash.com/photo-1576091160550-2173dba999ef?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
     theme_mode=theme_mode,
@@ -79,25 +101,19 @@ def _render_content_button(label: str, key: str) -> None:
     if st.button(label, key=key):
         _navigate_to_content_page()
 
-if is_logged_in():
-    # --- SIDEBAR --- 
-    with st.sidebar:
-        st.title("🤗 헬스케어 5070")
-        st.markdown("---")
-        st.success(f"{st.session_state['email']}님, 환영합니다!")
-        if st.button("로그아웃"):
-            logout()
-            st.rerun()
-
-        st.markdown("---")
-        contact_subject = quote("헬스케어 5070 문의")
-        mailto_link = f"mailto:{ADMIN_EMAIL}?subject={contact_subject}"
-        st.markdown(
-            f"<a class='custom-button sidebar-contact-button' href='{mailto_link}'>📮 Contact us</a>",
-            unsafe_allow_html=True,
-        )
-        st.caption("서비스 개선 제안을 이메일로 보내주세요.")
-
+if logged_in:
+    # --- SIDEBAR ---
+    post_sidebar_container = st.sidebar.container()
+    post_sidebar_container.markdown("---")
+    post_sidebar_container.title("🤗 헬스케어 5070")
+    post_sidebar_container.markdown("---")
+    contact_subject = quote("헬스케어 5070 문의")
+    mailto_link = f"mailto:{ADMIN_EMAIL}?subject={contact_subject}"
+    post_sidebar_container.markdown(
+        f"<a class='custom-button sidebar-contact-button' href='{mailto_link}'>📮 Contact us</a>",
+        unsafe_allow_html=True,
+    )
+    post_sidebar_container.caption("서비스 개선 제안을 이메일로 보내주세요.")
     # --- MAIN PAGE CONTENT ---
     # --- Logged-in user's homepage ---
     st.markdown('<div class="main-container">', unsafe_allow_html=True)

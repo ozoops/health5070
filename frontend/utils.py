@@ -41,7 +41,7 @@ def get_theme_mode(default: str = "dark") -> str:
     return st.session_state.get("theme_mode", default)
 
 
-def render_theme_selector(default: Optional[str] = None) -> str:
+def render_theme_selector(default: Optional[str] = None, container=None) -> str:
     """Render a sidebar selector for switching between light and dark themes."""
     if "theme_mode" not in st.session_state:
         st.session_state["theme_mode"] = default or "dark"
@@ -55,7 +55,8 @@ def render_theme_selector(default: Optional[str] = None) -> str:
         label for label, mode in label_to_mode.items() if mode == st.session_state["theme_mode"]
     )
 
-    selected_label = st.sidebar.radio(
+    target = container or st.sidebar
+    selected_label = target.radio(
         "화면 모드",
         options,
         index=options.index(current_label),
@@ -217,6 +218,26 @@ def set_background(image_url: str, theme_mode: Optional[str] = None) -> None:
             width: 100%;
             text-align: center;
             margin-top: 0.5rem;
+        }}
+
+        .sidebar-welcome-card {{
+            background: rgba(56, 104, 78, 0.92);
+            border-radius: 12px;
+            padding: 1rem;
+            border: 1px solid rgba(102, 184, 133, 0.5);
+            color: #d9f5e5;
+            font-weight: 600;
+            line-height: 1.4;
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25);
+        }}
+
+        .sidebar-welcome-email {{
+            color: #7cf2a9;
+            font-weight: 700;
+            text-decoration: none;
+        }}
+        .sidebar-welcome-email:hover {{
+            text-decoration: underline;
         }}
 
         .stButton button {{
