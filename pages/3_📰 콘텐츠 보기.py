@@ -8,7 +8,7 @@ import streamlit as st
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(project_root)
 
-from backend.database import init_db, get_all_generated_content, get_produced_videos
+from backend.database import init_db, get_all_generated_content, get_produced_videos, add_view_history
 from backend.config import data_dir
 from frontend.auth import is_logged_in
 from frontend.utils import set_background, render_theme_selector
@@ -24,13 +24,36 @@ def resolve_video_path(raw_path: Optional[str]) -> Optional[str]:
     return os.path.join(data_dir, sanitized)
 
 
+def log_video_view(video_row: pd.Series) -> None:
+    """Persist view history for the current user."""
+    user_id = st.session_state.get("user_id")
+    video_id = video_row.get("id")
+    if not user_id or video_id is None:
+        return
+    try:
+        add_view_history(conn, int(user_id), int(video_id), "video")
+    except Exception:
+        st.warning("시청 기록을 저장하는 중 오류가 발생했습니다.")
+
+
 def render_video_player(video_row: pd.Series) -> None:
-    """Safely render video player if file exists."""
+    """Render button gated video player and log watch history when played."""
     resolved_path = resolve_video_path(video_row.get("video_path"))
-    if resolved_path and os.path.exists(resolved_path):
+    if not resolved_path or not os.path.exists(resolved_path):
+        st.warning("영상 파일을 찾을 수 없습니다.")
+        return
+
+    video_id = video_row.get("id")
+    session_prefix = st.session_state.get("user_id", "anon")
+    play_state_key = f"play_video_{session_prefix}_{video_id}"
+    play_button_key = f"play_btn_{video_id}"
+
+    if st.button("▶️ 영상 재생", key=play_button_key):
+        st.session_state[play_state_key] = True
+        log_video_view(video_row)
+
+    if st.session_state.get(play_state_key):
         st.video(resolved_path)
-    else:
-        st.warning("���� ������ ã�� �� �����ϴ�.")
 
 st.set_page_config(page_title="콘텐츠 허브", layout="wide")
 theme_mode = render_theme_selector()

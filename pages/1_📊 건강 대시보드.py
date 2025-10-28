@@ -233,7 +233,7 @@ def create_dashboard():
         
     st.markdown("""
     <div style="background-color: rgba(38, 139, 219, 0.2); border-left: 5px solid #268bdb; padding: 1rem; border-radius: 0.5rem; margin-top: 1rem;">
-        <span style="color: white;">💡 위 통계는 일반적인 경향을 나타내며, 개인의 건강 상태는 다를 수 있습니다. 정기적인 건강검진과 전문가 상담이 중요합니다.</span>
+        <span style="color: white; white-space: nowrap;">💡 위 통계는 일반적인 경향을 나타내며, 개인의 건강 상태는 다를 수 있습니다. 정기적인 건강검진과 전문가 상담이 중요합니다.</span>
     </div>
     """, unsafe_allow_html=True)
 
